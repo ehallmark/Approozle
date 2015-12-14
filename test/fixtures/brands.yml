@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tables: 
+  name: MyString
+  pricing_tier: 1
+
+two:
+  tables: 
+  name: MyString
+  pricing_tier: 1

@@ -1,0 +1,39 @@
+<h1>Tables</h1>
+<%= link_to "New entry", tables_create_path %>
+<br />
+<table class="table table-bordered table-striped">
+	<thead>
+		<tr>
+			<th>Material</th>
+			<th>Detailing</th>
+			<th>Brand Name</th>
+			<th>Brand Tier</th>
+			<th>Shape</th>
+			<th>Length</th>
+			<th>Width</th>
+			<th>Height</th>
+			<th>Size</th>
+			<th>Price</th>
+			<th></th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<% @tables.each do |table| %>
+			<tr>
+				<td><%= table.material %></td>
+				<td><%= table.detailing %></td>
+				<td><%= table.try(:brand).try(:name) %></td>
+				<td><%= table.try(:brand).try(:pricing_tier_text) %>
+				<td><%= table.shape %></td>
+				<td><%= table.length %></td>
+				<td><%= table.width %></td>
+				<td><%= table.height %></td>
+				<td><%= table.size %></td>
+				<td><%= table.price %></td>
+				<td><%= link_to "Delete", tables_delete_path(id: table.id), method: :delete %></td>
+				<td><%= link_to "Edit", tables_edit_path(id: table.id) %></td>
+			</tr>
+		<% end %>
+	</tbody>
+</table>

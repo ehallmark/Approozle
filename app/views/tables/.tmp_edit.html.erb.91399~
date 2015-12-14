@@ -1,0 +1,28 @@
+<h1>Edit Table Entry</h1>
+<%= link_to "Back to Tables", tables_path %>
+<%= form_for @table, url: tables_update_path(id: @table.id), method: :post do |f| %>
+  <%= f.label :material %>:
+  <%= f.text_field :material %><br />
+  <%= f.label :detailing %>:
+  <%= f.text_field :detailing %><br />
+  <%= f.fields_for :brand do |fb| %>
+  	<%= fb.label :name %>:
+  	<%= fb.text_field :name %><br />
+  	<%= fb.label :pricing_tier %>:
+  	<%= fb.select :pricing_tier, Brand.new.options_for_select %><br />
+  <% end %>
+  <%= f.label :shape %>:
+  <%= f.text_field :shape %><br />
+  <%= f.label :length %>:
+  <%= f.text_field :length %><br />
+  <%= f.label :width %>:
+  <%= f.text_field :width %><br />
+  <%= f.label :height %>:
+  <%= f.text_field :height %><br />
+  <%= f.label :size %>:
+  <%= f.text_field :size %><br />
+  <%= f.label :price %>:
+  <%= f.text_field :price %><br />  
+
+  <%= f.submit %>
+<% end %>
