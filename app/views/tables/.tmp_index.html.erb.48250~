@@ -5,7 +5,6 @@
 <table class="styled">
 	<thead>
 		<tr>
-			<th></th>
 			<th>Item Name</th>
 			<th>Brand</th>
 			<th>Item Type</th>
@@ -17,9 +16,8 @@
 		</tr>
 	</thead>
 	<tbody>
-		<% @tables.each_with_index do |table,index| %>
+		<% @tables.each do |table| %>
 			<tr>
-				<td><%= index+1 %></td>
 				<td><%= table.name %></td>
 				<td><%= table.brand_name %></td>
 				<td><%= table.item_type %>

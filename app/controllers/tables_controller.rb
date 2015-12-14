@@ -24,7 +24,7 @@ class TablesController < ApplicationController
     sem3 = Semantics3::Products.new(API_KEY,API_SECRET)
     # Build the request
     product_type = params[:product_type]
-    sem3.products_field( "search", [product_type,"table furniture"].join(' ') )
+    sem3.products_field( "search", "furniture" )
     sem3.products_field( "name", product_type )
     sem3.products_field( "fields", ["name", "features", "manufacturer", "seller", "brand", "Material", "material", "price"] )
     
@@ -57,7 +57,7 @@ class TablesController < ApplicationController
         puts price
         puts brand
         puts material
-        if price.present? and (brand.present? or material.present? or name.present?)
+        if price.present? and brand.present?
           pHash = {
             price: price,
             brand_name: brand,
