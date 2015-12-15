@@ -24,16 +24,19 @@ class TablesController < ApplicationController
     sem3 = Semantics3::Products.new(API_KEY,API_SECRET)
     # Build the request
     product_type = params[:product_type]
-    sem3.products_field( "search", "furniture" )
     sem3.products_field( "name", product_type )
-    sem3.products_field( "fields", ["name", "features", "manufacturer", "seller", "brand", "Material", "material", "price"] )
+    sem3.products_field( "fields", ["name", "features", "manufacturer", "seller", "brand", "material", "price"] )
     
     # Run the request
-    @productsHash = sem3.get_products()
+    begin 
+      @productsHash = sem3.get_products()
+    rescue
+      @productsHash = {}
+    end
     
-    
+ 
     page = 0 
-    while (@productsHash) do
+    while (@productsHash.present?) do
       page = page + 1 
       puts "We are at page = #{page}"
       break if not @productsHash.try(:[],"results").present?
@@ -102,7 +105,7 @@ class TablesController < ApplicationController
   end
 
   def index
-    @tables = Table.order("price DESC NULLS LAST")
+    @tables = Table.order("brand_name ASC NULLS LAST")
   end
 
   private

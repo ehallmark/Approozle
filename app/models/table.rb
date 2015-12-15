@@ -15,11 +15,9 @@
 #end
 
 class Table < ActiveRecord::Base
-  
   #belongs_to :brand
   #accepts_nested_attributes_for :brand
-end
-
-class DiningTable < Table
-  
+  def self.dining
+    self.where("upper(item_type) = 'DINING TABLE'")
+  end
 end
