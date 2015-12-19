@@ -3,10 +3,14 @@
 <%= form_for @table, url: tables_update_path(id: @table.id), method: :post do |f| %>
   <%= f.label :material %>:
   <%= f.text_field :material %><br />
+  <%= f.label :detailing %>:
+  <%= f.text_field :detailing %><br />
   <%= f.label :brand_name %>:
   <%= f.text_field :brand_name %><br />
   <%= f.label :name %>:
   <%= f.text_field :name %><br />  
+  <%= f.label :size %>:
+  <%= f.text_field :size %><br />
   <%= f.label :price %>:
   <%= f.text_field :price %><br /> 
   <%= f.submit %>

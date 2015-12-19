@@ -7,8 +7,32 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-
-<%= yield %>
-
+	<nav class="navbar navbar-default navbar-fixed-top">
+	  <div class="container">
+	    <div class="navbar-header">
+	      <a class="navbar-brand" href="#">ApproozeDB</a>
+	    </div>
+	  <ul class="nav navbar-nav navbar-left">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tables <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><%= link_to 'Show All', tables_path %></li>
+            <li><%= link_to 'Analysis', tables_analysis_path %></li>
+            <li><%= link_to "New Entry", tables_create_path %></li>
+            <li><%= link_to 'New Seed', tables_seed_path %></li>
+            <li role="separator" class="divider"></li>
+            <li><%= link_to "Update Item Type Indices", tables_update_tables_item_type_index_path, method: :post %></li>
+			<li><%= link_to "Update Brand Name Indices", tables_update_tables_brand_name_index_path, method: :post %></li>
+          </ul>
+        </li>
+      </ul>
+	  </div>
+	</nav>
+	<br />
+	<br />
+	<br />
+	<div class="container">
+		<%= yield %>
+	</div>
 </body>
 </html>

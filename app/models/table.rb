@@ -17,7 +17,19 @@
 class Table < ActiveRecord::Base
   #belongs_to :brand
   #accepts_nested_attributes_for :brand
-  def self.dining
-    self.where("upper(item_type) = 'DINING TABLE'")
-  end
+  scope :dining_table, lambda { where("upper(item_type)='DINING TABLE'") }
+  filterrific(
+    default_filter_params: {  },
+    available_filters: [
+      #:search_query,
+      :dining_table,
+      #:pub_table,
+      #:sofa_table,
+      #:console_table,
+      #:bistro_table,
+      #:buffet_table,
+      #:end_table
+    ]
+  )
+  
 end

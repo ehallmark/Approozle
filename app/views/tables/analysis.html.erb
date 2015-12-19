@@ -1,0 +1,33 @@
+<h3>Analysis of Tables</h3>
+<br />
+<div class = "row">
+	<div class = "col-xs-6">
+		<table class='table table-bordered table-condensed table-striped'>
+			<thead>
+				<tr>
+					<th>Item Type</th>
+					<th>Total Record Count</th>
+					<th>Average Price</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% @table_price_averages.each do |t| %>
+					<tr>
+						<td><%= t.item_type.titleize %></td>
+						<td><%= t.total_count %></td>
+						<td><%= t.item_type_index %></td>
+					</tr>
+				<% end %>
+				<tr>
+					<th>Total</th>
+					<th><%= @total_count %></th>
+					<% averages = @table_price_averages.collect{|t| t.item_type_index}.compact %>
+					<th><%= averages.sum/averages.length %></th>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="col-xs-6">
+		
+	</div>
+</div>

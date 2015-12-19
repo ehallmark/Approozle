@@ -1,0 +1,38 @@
+<div id="filterrific_results">
+
+  <div>
+    <%= page_entries_info tables %>
+  </div>
+  <table class="styled">
+	<tr>
+		<td></td>
+		<th>Item Name</th>
+		<th>Brand Name</th>
+		<th>Brand Name Index</th>
+		<th>Item Type</th>
+		<th>Material</th>
+		<th>Price</th>
+		<th>Delete</th>
+		<th>Edit</th>
+	</tr>
+	<% tables.each_with_index do |table,index| %>
+		<tr>
+			<td><%= index+1 %></td>
+			<td><%= table.name %></td>
+			<td><%= table.brand_name %></td>
+			<td><%= table.brand_name_index %></td>
+			<td><%= table.item_type %></td>
+			<td><%= table.material %></td>
+			<td><%= table.price %></td>
+			<td><%= link_to "Delete", tables_delete_path(id: table.id), method: :delete %></td>
+			<td><%= link_to "Edit", tables_edit_path(id: table.id) %></td>
+		</tr>
+	<% end %>
+  </table>
+</div>
+  
+<%= will_paginate tables %>
+<br />
+<br />
+<br />
+

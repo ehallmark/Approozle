@@ -1,34 +1,10 @@
-<h1>Tables</h1>
-<%= link_to "New Table Entry", tables_create_path %>
-<%= link_to "Seed Dining Tables", tables_get_products_path(product_type: "Dining Table") %>
-<br />
-<table class="styled">
-	<thead>
-		<tr>
-			<th></th>
-			<th>Item Name</th>
-			<th>Brand</th>
-			<th>Item Type</th>
-			<th>Material</th>
-			<th>Size</th>
-			<th>Price</th>
-			<th></th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
-		<% @tables.each_with_index do |table,index| %>
-			<tr>
-				<td><%= index+1 %></td>
-				<td><%= table.name %></td>
-				<td><%= table.brand_name %></td>
-				<td><%= table.item_type %>
-				<td><%= table.material %></td>
-				<td></td>
-				<td><%= table.price %></td>
-				<td><%= link_to "Delete", tables_delete_path(id: table.id), method: :delete %></td>
-				<td><%= link_to "Edit", tables_edit_path(id: table.id) %></td>
-			</tr>
-		<% end %>
-	</tbody>
-</table>
+<div class="row">
+	<div class = "col-xs-12">		
+		<h3>Tables</h3>
+		<br />
+		<%= render(
+			  partial: 'tables/list',
+			  locals: { tables: @tables }
+			) %>
+	</div>
+</div>

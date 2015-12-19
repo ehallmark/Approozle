@@ -11,11 +11,20 @@ Rails.application.routes.draw do
   
   get 'tables/' => 'tables#index'
   
+  get 'tables/analysis' => 'tables#analysis'
+  
+  get 'tables/seed' => 'tables#seed'
+  
   delete 'tables/delete' => 'tables#delete'
   
   post 'tables/update' => 'tables#update'
   
-  get 'tables/get_products' => 'tables#get_products'
+  post 'tables/get_products' => 'tables#get_products'
+  
+  post 'tables/update_tables_item_type_index' => 'tables#update_tables_item_type_index'
+  
+  post 'tables/update_tables_brand_name_index' => 'tables#update_tables_brand_name_index'
+
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

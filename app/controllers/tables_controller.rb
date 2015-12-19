@@ -24,9 +24,14 @@ class TablesController < ApplicationController
     sem3 = Semantics3::Products.new(API_KEY,API_SECRET)
     # Build the request
     product_type = params[:product_type]
-    sem3.products_field( "name", product_type )
-    sem3.products_field( "fields", ["name", "features", "manufacturer", "seller", "brand", "material", "price"] )
-    
+    sem3.products_field( "name", product_type )  
+    begin
+      offset = Float(params[:offset])
+      offset = offset.to_i
+    rescue
+      offset = nil
+    end
+    sem3.products_field( "offset", offset ) if offset.present?
     # Run the request
     begin 
       @productsHash = sem3.get_products()
@@ -41,7 +46,9 @@ class TablesController < ApplicationController
       puts "We are at page = #{page}"
       break if not @productsHash.try(:[],"results").present?
       @productsHash["results"].each do |p|
-        p.each_key{|k| k = k.downcase if not p.include?(k.downcase) }
+        p.each{|k,v| 
+          material = v if k.downcase.include?('material')
+        }
         puts p.inspect
         brand = p.try(:[],"brand")
         brand = p.try(:[],"seller") if not brand.present?
@@ -49,13 +56,11 @@ class TablesController < ApplicationController
         price = p.try(:[],"price")
         name = p.try(:[],"name")
         material = p.try(:[],"material")
-        features = p.try(:[],"features")
+        features = p["features"] if p.has_key?("features")
         if features.present? and not material.present?
-          features.each_key{|k| 
-            k = k.downcase
-            k = 'material' if k.include?('material') and not features.include?('material')
+          features.each{|k,v| 
+            material = v if k.downcase.include?('material')
           }
-          material = features.try(:[],"material")
         end
         puts price
         puts brand
@@ -64,11 +69,14 @@ class TablesController < ApplicationController
           pHash = {
             price: price,
             brand_name: brand,
-            material: material,
             item_type: product_type,
             name: name
           }
-          Table.find_or_create_by(pHash)
+          # looks to update material in case I come up with a better algorithm in the future
+          if not (Table.where(pHash.merge(material: material))).exists?
+            Table.where(pHash.merge(material: nil)).destroy_all
+            Table.create(pHash.merge(material: material))
+          end
         end
       end
        
@@ -77,6 +85,20 @@ class TablesController < ApplicationController
     end
     
     redirect_to tables_path
+  end
+  
+  def update_tables_item_type_index
+    Table.joins("join tables as tables_2 on (upper(tables.item_type) = upper(tables_2.item_type))").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
+      t.update_attributes(item_type_index: t.avg_price)
+    }
+    redirect_to :back, notice: "Update complete!"
+  end
+  
+  def update_tables_brand_name_index
+    Table.joins("join tables as tables_2 on (upper(tables.brand_name) = upper(tables_2.brand_name))").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
+      t.update_attributes(brand_name_index: t.avg_price)
+    }
+    redirect_to :back, notice: "Update complete!"
   end
   
   def delete
@@ -105,7 +127,28 @@ class TablesController < ApplicationController
   end
 
   def index
-    @tables = Table.order("brand_name ASC NULLS LAST")
+    #Table.where(price: nil).destroy_all
+    all_tables = Table.order("item_type ASC NULLS LAST, brand_name ASC NULLS LAST, price DESC NULLS LAST")
+
+    @filterrific = initialize_filterrific(
+      all_tables,
+      params[:filterrific]
+    ) or return
+    @tables = @filterrific.find.page(params[:page])
+
+    respond_to do |format|
+      format.html
+      format.js
+    end
+  end
+  
+  def seed
+    
+  end
+  
+  def analysis
+    @table_price_averages = Table.joins("join tables as tables_2 on (upper(tables.item_type) = upper(tables_2.item_type))").where("tables.item_type is not NULL").select("tables.item_type, tables.item_type_index, count(tables_2.id) as total_count").group("tables.id").uniq.compact
+    @total_count = Table.all.length
   end
 
   private

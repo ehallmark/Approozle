@@ -1,0 +1,43 @@
+<h1>Tables</h1>
+<%= link_to "New Table Entry", tables_create_path %> <br />
+<%= link_to "Update Item Type Indices", tables_update_tables_item_type_index_path, method: :post %> <br />
+<%= link_to "Update Brand Name Indices", tables_update_tables_brand_name_index_path, method: :post %> <br /> <br />
+<%= form_tag tables_get_products_path do %>
+	<%= label_tag :product_type %><br />
+	<%= text_field_tag :product_type %><br />
+	<%= label_tag :offset %><br />
+	<%= text_field_tag :offset %><br />
+	<%= submit_tag "Seed" %>
+<% end %>
+<br />
+<br />
+<table class='styled'>
+	<thead>
+		<tr>
+			<th>Item Type</th>
+			<th>Total Record Count</th>
+			<th>Average Price</th>
+		</tr>
+	</thead>
+	<tbody>
+		<% @table_price_averages.each do |t| %>
+			<tr>
+				<td><%= t.item_type.titleize %></td>
+				<td><%= t.total_count %></td>
+				<td><%= t.item_type_index %></td>
+			</tr>
+		<% end %>
+		<tr>
+			<th>Total</th>
+			<th><%= @total_count %></th>
+			<% averages = @table_price_averages.collect{|t| t.item_type_index}.compact %>
+			<th><%= averages.sum/averages.length %></th>
+		</tr>
+	</tbody>
+</table>
+<br />
+<br />
+<%= render(
+  partial: 'tables/list',
+  locals: { tables: @tables }
+) %>
