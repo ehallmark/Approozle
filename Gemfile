@@ -20,7 +20,7 @@ gem 'jquery-rails'
 # Turbolinks makes following links in your web application faster. Read more: https://github.com/rails/turbolinks
 #gem 'turbolinks'
 gem 'json'
-
+gem 'pg_search'
 # Gemfile
 gem 'filterrific'
 ## Gemfile for Rails 3+, Sinatra, and Merb

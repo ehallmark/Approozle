@@ -82,6 +82,10 @@ GEM
       mini_portile2 (~> 2.0.0.rc2)
     oauth (0.4.7)
     pg (0.18.4-x64-mingw32)
+    pg_search (1.0.5)
+      activerecord (>= 3.1)
+      activesupport (>= 3.1)
+      arel
     rack (1.6.4)
     rack-test (0.6.3)
       rack (>= 1.0)
@@ -161,6 +165,7 @@ DEPENDENCIES
   jquery-rails
   json
   pg
+  pg_search
   rails (= 4.2.5)
   sass-rails (~> 5.0)
   sdoc (~> 0.4.0)
