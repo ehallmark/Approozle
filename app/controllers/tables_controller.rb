@@ -44,6 +44,7 @@ class TablesController < ApplicationController
     while (@productsHash.present?) do
       page = page + 1 
       puts "We are at page = #{page}"
+      puts @productsHash.inspect
       break if not @productsHash.try(:[],"results").present?
       @productsHash["results"].each do |p|
         p.each{|k,v| 
