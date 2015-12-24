@@ -1,5 +1,5 @@
-<h1>Edit Table Entry</h1>
-<%= link_to "Back to Tables", tables_path %>
+<h2>Edit Furniture Entry</h2>
+<%= link_to "Back to Furniture Page", tables_path %>
 <%= form_for @table, url: tables_update_path(id: @table.id), method: :post do |f| %>
   <%= f.label :material %>:
   <%= f.text_field :material %><br />

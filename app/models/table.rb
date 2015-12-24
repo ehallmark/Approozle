@@ -18,17 +18,11 @@ class Table < ActiveRecord::Base
   include PgSearch
   #belongs_to :brand
   #accepts_nested_attributes_for :brand
+  before_validation :capitalize_attributes
+  validate :validate_table
+  
   pg_search_scope :search_query, :against => [[:name,'A'],[:brand_name,'B'],[:item_type,'B'],[:material,'C']]
   scope :item_type, lambda {|item| where("upper(item_type) = '#{item.upcase}'") }
-  scope :dining_table, lambda { where("upper(item_type)='DINING TABLE'") }
-  scope :pub_table, lambda { where("upper(item_type)='PUB TABLE'") }
-  scope :sofa_table, lambda { where("upper(item_type)='SOFA TABLE'") }
-  scope :console_table, lambda { where("upper(item_type)='CONSOLE TABLE'") }
-  scope :end_table, lambda { where("upper(item_type)='END TABLE'") }
-  scope :buffet_table, lambda { where("upper(item_type)='BUFFET TABLE'") }
-  scope :bistro_table, lambda { where("upper(item_type)='BISTRO TABLE'") }
-  scope :occasional_table, lambda { where("upper(item_type)='OCCASIONAL TABLE'") }
-  scope :sideboard, lambda { where("upper(item_type)='SIDEBOARD'") }
   scope :sorted_by, lambda { |sort_option|
     direction = (sort_option =~ /desc$/) ? 'desc' : 'asc'
     case sort_option.to_s
@@ -53,5 +47,31 @@ class Table < ActiveRecord::Base
       :item_type
     ]
   )
+  private
+  def capitalize_attributes
+    write_attribute(:name,self.name.upcase) if self.name != self.name.upcase
+    write_attribute(:item_type,self.item_type.upcase) if self.item_type.present? and self.item_type != self.item_type.upcase
+    write_attribute(:brand_name,self.brand_name.upcase) if self.brand_name.present? and self.brand_name != self.brand_name.upcase
+    write_attribute(:material,self.material.upcase) if self.material.present? and self.material != self.material.upcase
+  end
+  
+  def validate_table
+    errors.add(:name_blank, "Name not present") unless self.name.present?
+    errors.add(:brand_name_blank, "Brand_name not present") unless self.brand_name.present?
+    errors.add(:item_type_blank, "Item_type not present") unless self.item_type.present?
+    errors.add(:invalid_price, "Invalid price") if self.price.blank? or self.price < 20
+    errors.add(:brand_name_not_capitalized, "Brand_name not capitalized") unless (self.brand_name || "")==(self.brand_name || "").upcase
+    errors.add(:name_not_capitalized, "Name not capitalized") unless (self.name || "")==(self.name || "").upcase
+    errors.add(:item_type_not_capitalized, "Item_type not capitalized") unless (self.item_type || "")==(self.item_type || "").upcase
+    errors.add(:material_not_capitalized, "Material not capitalized") unless (self.material || "")==(self.material || "").upcase
+    #validate duplicates
+    errors.add(:duplicate_record_found, "Duplicate record found") if Table.where(
+      price: self.price,
+      material: self.material,
+      brand_name: self.brand_name,
+      item_type: self.item_type
+    ).exists?
+     
+  end
   
 end

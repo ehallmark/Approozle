@@ -1,6 +1,6 @@
 <div class="row">
 	<div class = "col-xs-12">		
-		<h3>Tables</h3>
+		<h2>Furniture</h2>
 		<br />
 		<%= form_for_filterrific @filterrific do |f| %>
 		  <div class = "row">
@@ -15,7 +15,7 @@
 		  	  <label class="control-label">Item Type</label>
  			  <%= f.collection_select :item_type, Table.order(:item_type).select("item_type").uniq,:item_type,:item_type, {include_blank: true}, {class: 'filterrific-periodically-observed form-control'} %>
    			</div>
-		    <div class="col-xs-2 col-xs-offset-2">
+		    <div class="col-xs-1 col-xs-offset-3">
 		      <%= link_to(
 		        'Reset filters',
 		        reset_filterrific_url,

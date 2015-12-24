@@ -1,6 +1,8 @@
-<h3>Create New Table Entry</h3>
-<br />
+<h2>Create New Furniture Entry</h2>
+<%= link_to "Back to Furniture Page", tables_path %>
 <%= form_for @table, url: tables_new_path, method: :post do |f| %>
+  <%= f.label :item_type %>:
+  <%= f.text_field :item_type %><br />
   <%= f.label :material %>:
   <%= f.text_field :material %><br />
   <%= f.label :brand_name %>:
