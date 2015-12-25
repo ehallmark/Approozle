@@ -27,8 +27,9 @@ class TablesController < ApplicationController
     # Build the request
     product_type = params[:product_type]
     # we only want single items so skip anything with 'SET' in it
-    sem3.products_field( "name", {"include"=>product_type, "exclude"=>["set","toy","miniature","mini"]} ) 
-    sem3.products_field( "price", "gt", 20)
+    sem3.products_field( "name", "include" , product_type )
+    sem3.products_field( "name", "exclude" , ["set","toy","miniature","mini"] ) 
+    sem3.products_field( "price", "gt", 20 )
     product_type = product_type.upcase
     begin
       offset = Float(params[:offset])
@@ -163,7 +164,6 @@ class TablesController < ApplicationController
   def index
     #Table.where(price: nil).destroy_all
     all_tables = Table.order("item_type ASC NULLS LAST, brand_name ASC NULLS LAST, price DESC NULLS LAST")
-
     @filterrific = initialize_filterrific(
       all_tables,
       params[:filterrific]

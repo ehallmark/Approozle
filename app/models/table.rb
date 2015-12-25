@@ -56,10 +56,13 @@ class Table < ActiveRecord::Base
   end
   
   def validate_table
+    #wrong stuff blank
     errors.add(:name_blank, "Name not present") unless self.name.present?
     errors.add(:brand_name_blank, "Brand_name not present") unless self.brand_name.present?
     errors.add(:item_type_blank, "Item_type not present") unless self.item_type.present?
+    #bad price
     errors.add(:invalid_price, "Invalid price") if self.price.blank? or self.price < 20
+    #stuff not in all caps
     errors.add(:brand_name_not_capitalized, "Brand_name not capitalized") unless (self.brand_name || "")==(self.brand_name || "").upcase
     errors.add(:name_not_capitalized, "Name not capitalized") unless (self.name || "")==(self.name || "").upcase
     errors.add(:item_type_not_capitalized, "Item_type not capitalized") unless (self.item_type || "")==(self.item_type || "").upcase
@@ -71,7 +74,9 @@ class Table < ActiveRecord::Base
       brand_name: self.brand_name,
       item_type: self.item_type
     ).exists?
-     
+    #is part of a set or a toy
+    errors.add(:bad_keywords, "Found bad keywords") if (self.name.starts_with?("SET ") or self.name.include?(" SET ") or self.name.include? ("(SET") or self.name.include?("SET:") or self.name.include?(" TOY ") or self.name.include?("MINIATURE"))
+    
   end
   
 end
