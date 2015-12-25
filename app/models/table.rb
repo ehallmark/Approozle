@@ -68,14 +68,15 @@ class Table < ActiveRecord::Base
     errors.add(:item_type_not_capitalized, "Item_type not capitalized") unless (self.item_type || "")==(self.item_type || "").upcase
     errors.add(:material_not_capitalized, "Material not capitalized") unless (self.material || "")==(self.material || "").upcase
     #validate duplicates
-    errors.add(:duplicate_record_found, "Duplicate record found") if Table.where(
+    duplicate_table_ids = Table.where(
       price: self.price,
       material: self.material,
       brand_name: self.brand_name,
       item_type: self.item_type
-    ).exists?
+    ).pluck(:id)
+    errors.add(:duplicate_record_found, "Duplicate record found") if (duplicate_table_ids-[self.id]).present?
     #is part of a set or a toy
-    errors.add(:bad_keywords, "Found bad keywords") if (self.name.starts_with?("SET ") or self.name.include?(" SET ") or self.name.include? ("(SET") or self.name.include?("SET:") or self.name.include?(" TOY ") or self.name.include?("MINIATURE"))
+    errors.add(:bad_keywords, "Found bad keywords") if (self.name.starts_with?("SET ") or self.name.starts_with?("SET:") or self.name.starts_with?("TOY ") or self.name.include?(" SET ") or self.name.include? ("(SET ") or self.name.include?(" SET:") or self.name.include?(" TOY ") or self.name.include?("MINIATURE"))
     
   end
   

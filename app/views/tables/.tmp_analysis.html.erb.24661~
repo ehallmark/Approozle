@@ -23,7 +23,7 @@
 					<th>Total</th>
 					<th><%= @total_count %></th>
 					<% averages = @item_type_price_averages.collect{|t| t.item_type_index}.compact %>
-					<th><%= (averages.length > 0) ? averages.sum/averages.length : "N/A" %></th>
+					<th><%= averages.sum/averages.length %></th>
 				</tr>
 			</tbody>
 		</table>
@@ -50,7 +50,7 @@
 					<th>Total</th>
 					<th><%= @total_count %></th>
 					<% averages = @brand_price_averages.collect{|t| t.brand_name_index}.compact %>
-					<th><%= (averages.length > 0) ? averages.sum/averages.length : 'N/A' %></th>
+					<th><%= averages.sum/averages.length %></th>
 				</tr>
 			</tbody>
 		</table>

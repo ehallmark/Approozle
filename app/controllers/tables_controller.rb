@@ -28,7 +28,7 @@ class TablesController < ApplicationController
     product_type = params[:product_type]
     # we only want single items so skip anything with 'SET' in it
     sem3.products_field( "name", "include" , product_type )
-    sem3.products_field( "name", "exclude" , ["set","toy","miniature","mini"] ) 
+    sem3.products_field( "name", "exclude" , "set toy miniature" ) 
     sem3.products_field( "price", "gt", 20 )
     product_type = product_type.upcase
     begin
@@ -123,14 +123,18 @@ class TablesController < ApplicationController
   
   def update_tables_item_type_index
     Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
-      t.update_attributes(item_type_index: t.avg_price)
+      unless t.update_attributes(item_type_index: t.avg_price)
+        puts t.errors.messages.inspect
+      end
     }
     redirect_to :back, notice: "Update complete!"
   end
   
   def update_tables_brand_name_index
     Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
-      t.update_attributes(brand_name_index: t.avg_price)
+      unless t.update_attributes(brand_name_index: t.avg_price)
+        puts t.errors.messages.inspect
+      end
     }
     redirect_to :back, notice: "Update complete!"
   end
