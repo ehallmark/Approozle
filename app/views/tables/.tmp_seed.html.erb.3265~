@@ -3,8 +3,6 @@
 <%= form_tag tables_get_products_path do %>
 	<%= label_tag :product_type %><br />
 	<%= text_field_tag :product_type %><br />
-	<%= label_tag :brand_name %><br />
-	<%= text_field_tag :brand_name %><br />
 	<%= label_tag :offset %><br />
 	<%= text_field_tag :offset %><br />
 	<%= submit_tag "Seed" %>

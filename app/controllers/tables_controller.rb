@@ -5,6 +5,20 @@ class TablesController < ApplicationController
   API_KEY = 'SEM3259890376C6C204B176FF18706FB87EB'
   API_SECRET = 'Y2JmZjY1NjU5NDM2YjljMmU3ZmQ4YjBhZjRjMGUwNTg'
   
+  def appraisal_index
+  end
+  
+  def appraisal_results
+    table = params[:table]
+    if table.present?
+      table.has_key?(:brand_name) ? @brand_name = table[:brand_name] : @brand_name = ""
+      table.has_key?(:item_type) ? @item_type = table[:item_type] : @item_type = ""
+      table.has_key?(:material) ? @material = table[:material] : @material = ""
+      table.has_key?(:name) ? @name = table[:name] : @name = ""
+    end
+    
+  end
+  
   def create
     @table = Table.new
   end
@@ -29,6 +43,7 @@ class TablesController < ApplicationController
     # we only want single items so skip anything with 'SET' in it
     sem3.products_field( "name", "include" , product_type )
     sem3.products_field( "name", "exclude" , "set toy miniature" ) 
+    sem3.products_field( "brand", params[:brand_name]) if params.has_key?(:brand_name)
     sem3.products_field( "price", "gt", 20 )
     product_type = product_type.upcase
     begin

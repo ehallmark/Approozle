@@ -1,15 +1,20 @@
 <h2>Create New Furniture Entry</h2>
-<%= link_to "Back to Furniture Page", tables_path %>
-<%= form_for @table, url: tables_new_path, method: :post do |f| %>
-  <%= f.label :item_type %>:
-  <%= f.text_field :item_type %><br />
-  <%= f.label :material %>:
-  <%= f.text_field :material %><br />
-  <%= f.label :brand_name %>:
-  <%= f.text_field :brand_name %><br />
-  <%= f.label :name %>:
-  <%= f.text_field :name %><br />  
-  <%= f.label :price %>:
-  <%= f.text_field :price %><br /> 
-  <%= f.submit %>
-<% end %>
+<div class = "row">
+	<div class = "col-xs-5">
+		<%= link_to "Back to Furniture Page", tables_path %>
+		<%= form_for @table, url: tables_new_path, method: :post do |f| %>
+		  <%= f.label :item_type %>:
+		  <%= f.text_field :item_type, {class: 'form-control'} %>
+		  <%= f.label :brand_name %>:
+		  <%= f.text_field :brand_name, {class: 'form-control'} %>
+		  <%= f.label :material %>:
+		  <%= f.text_field :material, {class: 'form-control'} %>
+		  <%= f.label :name %>:
+		  <%= f.text_field :name, {class: 'form-control'} %> 
+		  <%= f.label :price %>:
+		  <%= f.text_field :price, {class: 'form-control'} %>
+		  <br />
+		  <%= f.submit "Create", class: "btn btn-primary" %>
+		<% end %>
+	</div>
+</div>
