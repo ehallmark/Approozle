@@ -76,7 +76,7 @@ class Table < ActiveRecord::Base
     ).pluck(:id)
     errors.add(:duplicate_record_found, "Duplicate record found") if (duplicate_table_ids-[self.id]).present?
     #is part of a set or a toy
-    errors.add(:bad_keywords, "Found bad keywords") if (self.name.starts_with?("SET ") or self.name.starts_with?("SET:") or self.name.starts_with?("TOY ") or self.name.include?(" SET ") or self.name.include? ("(SET ") or self.name.include?(" SET:") or self.name.include?(" TOY ") or self.name.include?("MINIATURE"))
+    errors.add(:bad_keywords, "Found bad keywords") if (self.name.starts_with?("SET ") or self.name.ends_with?(" SET") or self.name.ends_with?(" TOY") or self.name.include?(" LAMP ") or self.name.ends_with?(" LAMP") or self.name.starts_with?("LAMP ") or self.name.starts_with?("SET:") or self.name.starts_with?("TOY ") or self.name.include?(" SET ") or self.name.include? ("(SET ") or self.name.include?(" SET:") or self.name.include?(" TOY ") or self.name.include?("MINIATURE"))
     
   end
   

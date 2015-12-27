@@ -18,14 +18,14 @@ class TablesController < ApplicationController
       
       @from_brand_names = Table.where("brand_name ilike '%#{@brand_name}%' or name ilike '%#{@brand_name}%'") if @brand_name.present?
       begin @brand_name_index = @from_brand_names.pluck(:brand_name_index).sum/@from_brand_names.count rescue @brand_name_index = "N/A" end
-      @from_item_types = Table.where("item_type ilike '%#{@item_type}%' or name ilike '%#{@item_type}%'") if @item_type.present?
+      @from_item_types = Table.where("item_type = '#{@item_type}' or name ilike '%#{@item_type}%'") if @item_type.present?
       begin @item_type_index = @from_item_types.pluck(:item_type_index).sum/@from_item_types.count rescue @item_type_index = "N/A" end
       @from_materials = Table.where("material ilike '%#{@material}%' or name ilike '%#{@material}%'") if @material.present?
       @from_names = Table.search_query(@name) if @name.present?
-      @brand_name_count = @from_brand_names.count
-      @item_type_count = @from_item_types.count
-      @material_count = @from_materials.count
-      @name_count = @from_names.count
+      @brand_name_count = (@from_brand_names || []).count
+      @item_type_count = (@from_item_types || []).count
+      @material_count = (@from_materials || []).count
+      @name_count = (@from_names || []).count
       @total_count = @brand_name_count+@item_type_count+@material_count+@name_count
       begin @brand_name_price_average = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_average = "N/A" end
       begin @item_type_price_average = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_average = "N/A" end
@@ -34,21 +34,17 @@ class TablesController < ApplicationController
       attributes_prices = [@brand_name_price_average,@item_type_price_average,@material_price_average,@name_price_average].keep_if{|item|
         item.present? and item != "N/A"
       }
-      begin @weighted_brand_name_average = @brand_name_price_average*@brand_name_count/@total_count rescue @weighted_brand_name_average = "N/A" end
-      begin @weighted_item_type_average = @item_type_price_average*@item_type_count/@total_count rescue @weighted_item_type_average = "N/A" end
-      begin @weighted_material_average = @material_price_average*@material_count/@total_count rescue @weighted_material_average = "N/A" end
-      begin @weighted_name_average = @name_price_average*@name_count/@total_count rescue @weighted_name_average = "N/A" end
+      begin @weighted_brand_name_average = @brand_name_price_average.to_f*@brand_name_count/@total_count rescue @weighted_brand_name_average = "N/A" end
+      begin @weighted_item_type_average = @item_type_price_average.to_f*@item_type_count/@total_count rescue @weighted_item_type_average = "N/A" end
+      begin @weighted_material_average = @material_price_average.to_f*@material_count/@total_count rescue @weighted_material_average = "N/A" end
+      begin @weighted_name_average = @name_price_average.to_f*@name_count/@total_count rescue @weighted_name_average = "N/A" end
       attributes_prices = [@brand_name_price_average,@item_type_price_average,@material_price_average,@name_price_average].keep_if{|item|
         item.present? and item != "N/A"
       }
+      begin @total_price_average = attributes_prices.sum/attributes_prices.length rescue @total_price_average = "N/A" end      
       weighted_attributes_prices = [@weighted_brand_name_average,@weighted_item_type_average,@weighted_material_average,@weighted_name_average].keep_if{|item|
         item.present? and item != "N/A"
       }
-      begin @item_type_brand_name_multiplier = (@from_item_types.pluck(:brand_name_index).sum.to_f/@item_type_count).to_f/@brand_name_index.to_f rescue @item_type_brand_name_multiplier = "N/A" end
-      begin @brand_name_item_type_multiplier = (@from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count).to_f/@item_type_index.to_f rescue @brand_name_item_type_multiplier = "N/A" end
-      begin @adjusted_brand_name_price = @brand_name_price_average*@item_type_brand_name_multiplier rescue @adjusted_brand_name_price = 'N/A' end
-      begin @adjusted_item_type_price = @item_type_price_average*@brand_name_item_type_multiplier rescue @adjusted_item_type_price = 'N/A' end
-      begin @total_price_average = attributes_prices.sum/attributes_prices.length rescue @total_price_average = "N/A" end
       begin @total_weighted_price_average = weighted_attributes_prices.sum rescue @total_weighted_price_average = "N/A" end
     end
     
@@ -78,7 +74,7 @@ class TablesController < ApplicationController
     # we only want single items so skip anything with 'SET' in it
     sem3.products_field( "name", "include" , product_type )
     sem3.products_field( "name", "exclude" , "set toy miniature" ) 
-    sem3.products_field( "brand", params[:brand_name]) if params.has_key?(:brand_name)
+    sem3.products_field( "brand", params[:brand_name]) if params[:brand_name].present?
     sem3.products_field( "price", "gt", 20 )
     product_type = product_type.upcase
     begin
