@@ -11,11 +11,10 @@ class TablesController < ApplicationController
   def appraisal_results
     table = params[:table]
     if table.present?
-      table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase : @brand_name = ""
-      table.has_key?(:item_type) ? @item_type = table[:item_type].upcase : @item_type = ""
-      table.has_key?(:material) ? @material = table[:material].upcase : @material = ""
-      table.has_key?(:name) ? @name = table[:name].upcase : @name = ""
-      
+      table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'') : @brand_name = ""
+      table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'') : @item_type = ""
+      table.has_key?(:material) ? @material = table[:material].upcase.gsub(/[^0-9A-Z ]/i,'') : @material = ""
+      table.has_key?(:name) ? @name = table[:name].upcase.gsub(/[^0-9A-Z ]/i,'') : @name = ""
       @from_brand_names = Table.where("brand_name ilike '%#{@brand_name}%' or name ilike '%#{@brand_name}%'") if @brand_name.present?
       begin @brand_name_index = @from_brand_names.pluck(:brand_name_index).sum/@from_brand_names.count rescue @brand_name_index = "N/A" end
       @from_item_types = Table.where("item_type = '#{@item_type}' or name ilike '%#{@item_type}%'") if @item_type.present?
@@ -31,21 +30,22 @@ class TablesController < ApplicationController
       begin @item_type_price_average = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_average = "N/A" end
       begin @material_price_average = @from_materials.pluck(:price).sum/@material_count rescue @material_price_average = "N/A" end
       begin @name_price_average = @from_names.pluck(:price).sum/@name_count rescue @name_price_average = "N/A" end
-      attributes_prices = [@brand_name_price_average,@item_type_price_average,@material_price_average,@name_price_average].keep_if{|item|
+      # variables to standardize above variables
+      begin @material_boost_from_item_type = @from_materials.pluck(:item_type_index).sum.to_f/@material_count.to_f rescue @material_boost_from_item_type = "N/A" end
+      begin @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f rescue @brand_name_boost_from_item_type = "N/A" end
+      begin @name_boost_from_item_type = @from_names.pluck(:item_type_index).sum.to_f/@name_count.to_f rescue @name_boost_from_item_type = "N/A" end
+      begin @item_type_adjusted_for_brand_name = @item_type_price_average*@brand_name_price_average/@brand_name_boost_from_item_type rescue @item_type_adjusted_for_brand_name = "N/A" end
+      begin @item_type_adjusted_for_material = @item_type_price_average*@material_price_average/@material_boost_from_item_type rescue @item_type_adjusted_for_material = "N/A" end
+      begin @item_type_adjusted_for_name = @item_type_price_average*@name_price_average/@name_boost_from_item_type rescue @item_type_adjusted_for_name = "N/A" end
+      begin @item_type_weighted_by_brand_name = @item_type_adjusted_for_brand_name*@brand_name_count rescue @item_type_weighted_by_brand_name = "N/A" end
+      begin @item_type_weighted_by_material = @item_type_adjusted_for_material*@material_count rescue @item_type_weighted_by_material = "N/A" end
+      begin @item_type_weighted_by_name = @item_type_adjusted_for_name*@name_count rescue @item_type_weighted_by_name = "N/A" end
+      begin @item_type_weighted = @item_type_price_average*@item_type_count rescue @item_type_weighted = "N/A" end
+      # get final results
+      weighted_item_type_adjustments = [@item_type_weighted_by_brand_name, @item_type_weighted_by_material, @item_type_weighted_by_name, @item_type_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
-      begin @weighted_brand_name_average = @brand_name_price_average.to_f*@brand_name_count/@total_count rescue @weighted_brand_name_average = "N/A" end
-      begin @weighted_item_type_average = @item_type_price_average.to_f*@item_type_count/@total_count rescue @weighted_item_type_average = "N/A" end
-      begin @weighted_material_average = @material_price_average.to_f*@material_count/@total_count rescue @weighted_material_average = "N/A" end
-      begin @weighted_name_average = @name_price_average.to_f*@name_count/@total_count rescue @weighted_name_average = "N/A" end
-      attributes_prices = [@brand_name_price_average,@item_type_price_average,@material_price_average,@name_price_average].keep_if{|item|
-        item.present? and item != "N/A"
-      }
-      begin @total_price_average = attributes_prices.sum/attributes_prices.length rescue @total_price_average = "N/A" end      
-      weighted_attributes_prices = [@weighted_brand_name_average,@weighted_item_type_average,@weighted_material_average,@weighted_name_average].keep_if{|item|
-        item.present? and item != "N/A"
-      }
-      begin @total_weighted_price_average = weighted_attributes_prices.sum rescue @total_weighted_price_average = "N/A" end
+      begin @adjusted_and_weighted_item_type_average = weighted_item_type_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_item_type_average = "N/A" end
     end
     
   end
@@ -76,7 +76,7 @@ class TablesController < ApplicationController
     sem3.products_field( "name", "exclude" , "set toy miniature" ) 
     sem3.products_field( "brand", params[:brand_name]) if params[:brand_name].present?
     sem3.products_field( "price", "gt", 20 )
-    product_type = product_type.upcase
+    product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'')
     begin
       offset = Float(params[:offset])
       offset = offset.to_i
@@ -103,7 +103,7 @@ class TablesController < ApplicationController
         name = p.try(:[],"name")
         material = []
         p.each{|k,v| 
-          material.push(v.upcase) if k.downcase.include?('material') and v.present?
+          material.push(v.upcase.gsub(/[^0-9A-Z ]/i,'')) if k.downcase.include?('material') and v.present?
         }
         puts p.inspect
         brand = p.try(:[],"brand")
@@ -113,16 +113,15 @@ class TablesController < ApplicationController
         features = p["features"] if p.has_key?("features")
         if features.present? and not material.present?
           features.each{|k,v| 
-            material.push(v.upcase) if k.downcase.include?('material') and v.present?
+            material.push(v.upcase.gsub(/[^0-9A-Z ]/i,'')) if k.downcase.include?('material') and v.present?
           }
         end
-        material = material.uniq.join('; ')
+        material = material.uniq.join(' ')
         puts price
-        puts brand
         puts material
-        brand = brand.upcase if brand.present?
-        name = name.upcase if name.present?
-        material = material.upcase if name.present?
+        brand = brand.upcase.gsub(/[^0-9A-Z ]/i,'') if brand.present?
+        name = name.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
+        material = material.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
         if price.present? and brand.present? and name.present?
           pHash = {
             price: price,
@@ -176,15 +175,6 @@ class TablesController < ApplicationController
     redirect_to :back, notice: "Update complete!"
   end
   
-  def update_tables_brand_name_index
-    Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
-      unless t.update_attributes(brand_name_index: t.avg_price)
-        puts t.errors.messages.inspect
-      end
-    }
-    redirect_to :back, notice: "Update complete!"
-  end
-  
   def delete
     if (params[:id] and Table.destroy(params[:id])) 
       redirect_to :back, :notice => "Successfully deleted"
@@ -232,7 +222,6 @@ class TablesController < ApplicationController
   
   def analysis
     @item_type_price_averages = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where("tables.item_type is not NULL").select("tables.item_type, tables.item_type_index, count(tables_2.id) as total_count").order("total_count desc").group("tables.id").uniq.compact
-    @brand_price_averages = Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where("tables.brand_name is not NULL").select("tables.brand_name, tables.brand_name_index, count(tables_2.id) as total_count").order("total_count desc").group("tables.id").uniq.compact
     @total_count = Table.all.length
   end
 

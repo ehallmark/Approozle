@@ -1,7 +1,7 @@
 <h2>Furniture Analysis</h2>
 <%= link_to "Back to Furniture Page", tables_path %>
 <div class = "row">
-	<div class = "col-xs-12">
+	<div class = "col-xs-5">
 		<h3>Item Type Index</h3>
 		<table class='table table-bordered table-condensed table-striped'>
 			<thead>
@@ -24,6 +24,33 @@
 					<th><%= @total_count %></th>
 					<% averages = @item_type_price_averages.collect{|t| t.item_type_index}.compact %>
 					<th><%= (averages.length > 0) ? averages.sum/averages.length : "N/A" %></th>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="col-xs-5 col-xs-offset-1">
+		<h3>Brand Index</h3>
+		<table class='table table-bordered table-condensed table-striped'>
+			<thead>
+				<tr>
+					<th>Brand Name</th>
+					<th>Total Record Count</th>
+					<th>Average Price</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% @brand_price_averages.each do |t| %>
+					<tr>
+						<td><%= t.brand_name.titleize %></td>
+						<td><%= t.total_count %></td>
+						<td><%= t.brand_name_index %></td>
+					</tr>
+				<% end %>
+				<tr>
+					<th>Total</th>
+					<th><%= @total_count %></th>
+					<% averages = @brand_price_averages.collect{|t| t.brand_name_index}.compact %>
+					<th><%= (averages.length > 0) ? averages.sum/averages.length : 'N/A' %></th>
 				</tr>
 			</tbody>
 		</table>

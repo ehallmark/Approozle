@@ -2,13 +2,7 @@
 #  def change
 #    create_table :tables do |t|
 #      t.string :material
-#      t.string :detailing
 #      t.string :brand_name
-#      t.string :shape
-#      t.float :length
-#      t.float :width
-#      t.float :height
-#      t.string :size
 #      t.timestamps null: false
 #    end
 #  end
@@ -49,10 +43,10 @@ class Table < ActiveRecord::Base
   )
   private
   def capitalize_attributes
-    write_attribute(:name,self.name.upcase) if self.name != self.name.upcase
-    write_attribute(:item_type,self.item_type.upcase) if self.item_type.present? and self.item_type != self.item_type.upcase
-    write_attribute(:brand_name,self.brand_name.upcase) if self.brand_name.present? and self.brand_name != self.brand_name.upcase
-    write_attribute(:material,self.material.upcase) if self.material.present? and self.material != self.material.upcase
+    write_attribute(:name,self.name.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.name != self.name.upcase.gsub(/[^0-9A-Z ]/i,'')
+    write_attribute(:item_type,self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.item_type.present? and self.item_type != self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'')
+    write_attribute(:brand_name,self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.brand_name.present? and self.brand_name != self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'')
+    write_attribute(:material,self.material.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.material.present? and self.material != self.material.upcase.gsub(/[^0-9A-Z ]/i,'')
   end
   
   def validate_table

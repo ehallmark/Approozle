@@ -22,6 +22,7 @@
             <li><%= link_to 'New Seed', tables_seed_path %></li>
             <li role="separator" class="divider"></li>
             <li><%= link_to "Update Item Type Indices", tables_update_tables_item_type_index_path, method: :post %></li>
+			<li><%= link_to "Update Brand Name Indices", tables_update_tables_brand_name_index_path, method: :post %></li>
           </ul>
         </li>
 		<li>
