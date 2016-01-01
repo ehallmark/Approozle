@@ -36,9 +36,9 @@ class TablesController < ApplicationController
       begin @item_type_boost_from_brand_name = @from_item_types.pluck(:brand_name_index).sum.to_f/@item_type_count.to_f rescue @item_type_boost_from_brand_name = "N/A" end
       begin @name_boost_from_brand_name = @from_names.pluck(:brand_name_index).sum.to_f/@name_count.to_f rescue @name_boost_from_brand_name = "N/A" end
       # readjust variables to account for weakness of material attribute completeness
-      @brand_name_count = (@item_type_count*5)/6 if @brand_name_count > 0 
-      @name_count = @item_type_count/2 if @name_count > 0
-      @material_count = @item_type_count/4 if @material_count > 0
+      #@brand_name_count = (@item_type_count*5)/6 if @brand_name_count > 0 
+      #@name_count = @item_type_count/2 if @name_count > 0
+      #@material_count = @item_type_count/4 if @material_count > 0
       @total_count = @brand_name_count+@item_type_count+@material_count+@name_count
       # get weighted variables
       begin @item_type_adjusted_for_brand_name = @item_type_price_average*@brand_name_price_average/@brand_name_boost_from_item_type rescue @item_type_adjusted_for_brand_name = "N/A" end
@@ -64,8 +64,10 @@ class TablesController < ApplicationController
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_brand_name_average = weighted_brand_name_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_brand_name_average = "N/A" end
-      
-      begin @final_price = 0.25*@adjusted_and_weighted_brand_name_average+0.75*@adjusted_and_weighted_item_type_average rescue @final_price = "N/A" end
+      final_adjustments = [@adjusted_and_weighted_brand_name_average, @adjusted_and_weighted_item_type_average, @adjusted_and_weighted_item_type_average].keep_if{|item|
+        item.present? and item != "N/A" and item > 0.1
+      }
+      begin @final_price = final_adjustments.sum.to_f/final_adjustments.length.to_f rescue @final_price = "N/A" end
     end
     
   end
