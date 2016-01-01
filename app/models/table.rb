@@ -1,4 +1,4 @@
-#class CreateTable < ActiveRecord::Migration
+#class CreateTable < ActiveRecoritemd::Migration
 #  def change
 #    create_table :tables do |t|
 #      t.string :material
@@ -9,13 +9,14 @@
 #end
 
 class Table < ActiveRecord::Base
-  include PgSearch
+
   #belongs_to :brand
   #accepts_nested_attributes_for :brand
   before_validation :capitalize_attributes
   validate :validate_table
   attr_accessor :optional_search 
-  pg_search_scope :search_query, :against => [[:name,'A'],[:brand_name,'B'],[:item_type,'B'],[:material,'C']]
+
+  scope :search_query, lambda {|q| where("name like upper('%#{q}%') or item_type like upper('%#{q}%') or material like upper('%#{q}%') or brand_name like upper('%#{q}%')") }
   scope :item_type, lambda {|item| where("upper(item_type) = '#{item.upcase}'") }
   scope :sorted_by, lambda { |sort_option|
     direction = (sort_option =~ /desc$/) ? 'desc' : 'asc'

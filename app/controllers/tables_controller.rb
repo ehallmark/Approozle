@@ -52,7 +52,7 @@ class TablesController < ApplicationController
       begin @item_type_weighted_by_name = @item_type_adjusted_for_name*@name_count rescue @item_type_weighted_by_name = "N/A" end
       begin @item_type_weighted = @item_type_price_average*@item_type_count rescue @item_type_weighted = "N/A" end
       begin @brand_name_weighted_by_brand_name = @brand_name_adjusted_for_item_type*@item_type_count rescue @brand_name_weighted_by_brand_name = "N/A" end
-      begin @brand_name_weighted_by_material = @brand_nae_adjusted_for_material*@material_count rescue @brand_name_weighted_by_material = "N/A" end
+      begin @brand_name_weighted_by_material = @brand_name_adjusted_for_material*@material_count rescue @brand_name_weighted_by_material = "N/A" end
       begin @brand_name_weighted_by_name = @brand_name_adjusted_for_name*@name_count rescue @brand_name_weighted_by_name = "N/A" end
       begin @brand_name_weighted = @brand_name_price_average*@brand_name_count rescue @brand_name_weighted = "N/A" end
       # get final results
@@ -94,6 +94,7 @@ class TablesController < ApplicationController
     # Build the request
     product_type = params[:product_type]
     # we only want single items so skip anything with 'SET' in it
+    sem3.products_field( "search", "Furniture" )
     sem3.products_field( "name", "include" , product_type )
     sem3.products_field( "name", "exclude" , "set toy miniature" ) 
     sem3.products_field( "brand", params[:brand_name]) if params[:brand_name].present?
@@ -185,26 +186,62 @@ class TablesController < ApplicationController
       end
     end
     puts "New records created: #{new_record_count}"
+    
+    #update brand name index
+    brand_names = Table.order(:brand_name).select("brand_name").uniq.map(&:brand_name)
+    table_brand_name_data = Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.id, tables.brand_name, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
+      [t.brand_name,t.avg_price]
+    }.uniq.flatten
+    table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
+    brand_names.each do |brand_name|
+      unless Table.where(brand_name: brand_name).update_all(brand_name_index: table_brand_name_hash[brand_name])
+        puts t.errors.messages.inspect
+      end
+    end
+    puts "Brand name index updated"
+    
+    #update item type index
+    item_types = Table.order(:item_type).select("item_type").uniq.map(&:item_type)
+    table_item_types_data = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.id, tables.item_type, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
+      [t.item_type,t.avg_price]
+    }.uniq.flatten
+    table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
+    item_types.each do |item_type|
+      unless Table.where(item_type: item_type).update_all(item_type_index: table_item_type_hash[item_type])
+        puts t.errors.messages.inspect
+      end
+    end    
+    puts "Item type index updated"
+    puts "Total new records created: #{new_record_count}"
+
     redirect_to tables_path
   end
   
   def update_tables_item_type_index
-    Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
-      unless t.update_attributes(item_type_index: t.avg_price)
+    item_types = Table.order(:item_type).select("item_type").uniq.map(&:item_type)
+    table_item_types_data = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.id, tables.item_type, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
+      [t.item_type,t.avg_price]
+    }.uniq.flatten
+    table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
+    item_types.each do |item_type|
+      unless Table.where(item_type: item_type).update_all(item_type_index: table_item_type_hash[item_type])
         puts t.errors.messages.inspect
-        t.destroy
       end
-    }
+    end
     redirect_to :back, notice: "Update complete!"
   end
   
   def update_tables_brand_name_index
-    Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
-      unless t.update_attributes(brand_name_index: t.avg_price)
+    brand_names = Table.order(:brand_name).select("brand_name").uniq.map(&:brand_name)
+    table_brand_name_data = Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.id, tables.brand_name, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
+      [t.brand_name,t.avg_price]
+    }.uniq.flatten
+    table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
+    brand_names.each do |brand_name|
+      unless Table.where(brand_name: brand_name).update_all(brand_name_index: table_brand_name_hash[brand_name])
         puts t.errors.messages.inspect
-        t.destroy
       end
-    }
+    end
     redirect_to :back, notice: "Update complete!"
   end
   
