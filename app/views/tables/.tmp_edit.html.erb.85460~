@@ -1,19 +1,20 @@
-<h2>New Furniture Appraisal</h2>
+<h2>Edit Furniture Entry</h2>
 <div class = "row">
 	<div class = "col-xs-5">
 		<%= link_to "Back to Furniture Page", tables_path %>
-		<%= form_for Table.new, url: tables_appraisal_path, method: :post do |f| %>
+		<%= form_for @table, url: tables_update_path(id: @table.id), method: :post do |f| %>
 		  <%= f.label :item_type %>:
 		  <%= f.collection_select :item_type, Table.order(:item_type).select("item_type").uniq,:item_type,:item_type, {include_blank: true}, {class: 'form-control'} %>
 		  <%= f.label :brand_name %>:
 		  <%= f.text_field :brand_name, {class: 'form-control'} %>
 		  <%= f.label :material %>:
 		  <%= f.text_field :material, {class: 'form-control'} %>
-		  <%= f.label :optional_search %>:
-		  <%= f.text_field :optional_search, {class: "form-control"} %>
-		  <br />  
-		  <%= f.submit "Get Appraisal", class: "btn btn-primary" %>
-		<% end %>		
+		  <%= f.label :name %>:
+		  <%= f.text_field :name, {class: "form-control"} %> 
+		  <%= f.label :price %>:
+		  <%= f.text_field :price, {class: "form-control"} %>
+		  <br />
+		  <%= f.submit "Edit", class: "btn btn-primary" %>
+		<% end %>
 	</div>
 </div>
-

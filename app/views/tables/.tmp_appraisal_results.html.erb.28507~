@@ -1,0 +1,34 @@
+<h2>Appraisal Results</h2>
+<div class = "row">
+	<div class = "col-xs-4">
+		Item Type: <%= @item_type %><br />
+		Brand Name: <%= @brand_name %><br />
+		Material: <%= @material %><br />
+		Name: <%= @name %><br />
+		<br />
+		Item Type - Price Average: <%= @item_type_price_average %><br />
+		Item Type - Count: <%= @item_type_count %><br />
+		<br />
+		Brand Name - Price Average: <%= @brand_name_price_average %><br />
+		Brand Name - Item Type Index: <%= @brand_name_boost_from_item_type %><br />
+		Brand Name - Count: <%= @brand_name_count %><br />
+		<br />
+		Material - Price Average: <%= @material_price_average %><br />
+		Material - Item Type Index: <%= @material_boost_from_item_type %><br />
+		Material - Count: <%= @material_count %><br />
+		<br />
+		Name - Price Average: <%= @name_price_average %><br />	
+		Name - Item Type Index: <%= @name_boost_from_item_type %><br />		
+		Name - Count: <%= @name_count %><br />
+		<br />	
+	</div>
+	<div class = "col-xs-7 col-xs-offset-1">
+		<h3>
+			Weighted and Adjusted Price Estimate: <%= number_to_currency @adjusted_and_weighted_item_type_average %>
+		</h3>
+		<br />
+		<h4>		
+			Total Results Found: <%= @total_count %>
+		</h4>	
+	</div>
+</div>

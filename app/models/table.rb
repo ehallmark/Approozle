@@ -14,7 +14,7 @@ class Table < ActiveRecord::Base
   #accepts_nested_attributes_for :brand
   before_validation :capitalize_attributes
   validate :validate_table
-  
+  attr_accessor :optional_search 
   pg_search_scope :search_query, :against => [[:name,'A'],[:brand_name,'B'],[:item_type,'B'],[:material,'C']]
   scope :item_type, lambda {|item| where("upper(item_type) = '#{item.upcase}'") }
   scope :sorted_by, lambda { |sort_option|

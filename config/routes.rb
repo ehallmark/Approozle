@@ -22,6 +22,8 @@ Rails.application.routes.draw do
   post 'tables/get_products' => 'tables#get_products'
   
   post 'tables/update_tables_item_type_index' => 'tables#update_tables_item_type_index'
+
+  post 'tables/update_tables_brand_name_index' => 'tables#update_tables_brand_name_index'
   
   post 'tables/update_tables_validations' => 'tables#update_tables_validations'
   
