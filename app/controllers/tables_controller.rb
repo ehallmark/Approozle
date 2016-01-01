@@ -25,7 +25,6 @@ class TablesController < ApplicationController
       @item_type_count = (@from_item_types || []).count
       @material_count = (@from_materials || []).count
       @name_count = (@from_names || []).count
-      @total_count = @brand_name_count+@item_type_count+@material_count+@name_count
       begin @brand_name_price_average = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_average = "N/A" end
       begin @item_type_price_average = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_average = "N/A" end
       begin @material_price_average = @from_materials.pluck(:price).sum/@material_count rescue @material_price_average = "N/A" end
@@ -34,6 +33,15 @@ class TablesController < ApplicationController
       begin @material_boost_from_item_type = @from_materials.pluck(:item_type_index).sum.to_f/@material_count.to_f rescue @material_boost_from_item_type = "N/A" end
       begin @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f rescue @brand_name_boost_from_item_type = "N/A" end
       begin @name_boost_from_item_type = @from_names.pluck(:item_type_index).sum.to_f/@name_count.to_f rescue @name_boost_from_item_type = "N/A" end
+      # readjust variables to account for weakness of material attribute completeness
+      @brand_name_count = @item_type_count if @brand_name_count > @item_type_count
+      @brand_name_count = @item_type_count/4 if @brand_name_count > 0 and @brand_name_count < @item_type_count/4
+      @material_count = @item_type_count/3 if @material_count > 3*@item_type_count
+      @material_count = @item_type_count/100 if @material_count > 0 and @material_count < @item_type_count / 100
+      @name_count = @item_type_count if @name_count > @item_type_count
+      @name_count = @item_type_count/10 if @name_count > 0 and @name_count < @item_type_count/10
+      @total_count = @brand_name_count+@item_type_count+@material_count+@name_count
+      # get weighted variables
       begin @item_type_adjusted_for_brand_name = @item_type_price_average*@brand_name_price_average/@brand_name_boost_from_item_type rescue @item_type_adjusted_for_brand_name = "N/A" end
       begin @item_type_adjusted_for_material = @item_type_price_average*@material_price_average/@material_boost_from_item_type rescue @item_type_adjusted_for_material = "N/A" end
       begin @item_type_adjusted_for_name = @item_type_price_average*@name_price_average/@name_boost_from_item_type rescue @item_type_adjusted_for_name = "N/A" end
@@ -76,7 +84,7 @@ class TablesController < ApplicationController
     sem3.products_field( "name", "exclude" , "set toy miniature" ) 
     sem3.products_field( "brand", params[:brand_name]) if params[:brand_name].present?
     sem3.products_field( "price", "gt", 20 )
-    product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'')
+    product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
     begin
       offset = Float(params[:offset])
       offset = offset.to_i
@@ -170,6 +178,16 @@ class TablesController < ApplicationController
     Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.*, avg(tables_2.price) as avg_price").group("tables.id").each{|t|
       unless t.update_attributes(item_type_index: t.avg_price)
         puts t.errors.messages.inspect
+      end
+    }
+    redirect_to :back, notice: "Update complete!"
+  end
+  
+  def update_tables_validations
+    Table.all.each{|t|
+      unless t.save
+        puts t.errors.messages.inspect
+        t.destroy
       end
     }
     redirect_to :back, notice: "Update complete!"

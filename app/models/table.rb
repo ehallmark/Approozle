@@ -41,12 +41,26 @@ class Table < ActiveRecord::Base
       :item_type
     ]
   )
+  
+  def keywords
+    self.name.split(" ")
+  end
+  
+  def self.badwords
+    ["TOY","TOYS","MINIATURE","LAMPS","DOLLS","SET","SETS","DOLL","DOLLHOUSE"]
+  end
+  
+  def has_badword
+    Table.badwords.each{|word| return true if self.keywords.include?(word)}
+    return false
+  end
+  
   private
   def capitalize_attributes
-    write_attribute(:name,self.name.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.name != self.name.upcase.gsub(/[^0-9A-Z ]/i,'')
-    write_attribute(:item_type,self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.item_type.present? and self.item_type != self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'')
-    write_attribute(:brand_name,self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.brand_name.present? and self.brand_name != self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'')
-    write_attribute(:material,self.material.upcase.gsub(/[^0-9A-Z ]/i,'')) if self.material.present? and self.material != self.material.upcase.gsub(/[^0-9A-Z ]/i,'')
+    write_attribute(:name,self.name.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.name != self.name.upcase.gsub(/[^0-9A-Z ]/i,'').strip
+    write_attribute(:item_type,self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.item_type.present? and self.item_type != self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
+    write_attribute(:brand_name,self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.brand_name.present? and self.brand_name != self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'').strip
+    write_attribute(:material,self.material.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.material.present? and self.material != self.material.upcase.gsub(/[^0-9A-Z ]/i,'').strip
   end
   
   def validate_table
@@ -70,7 +84,7 @@ class Table < ActiveRecord::Base
     ).pluck(:id)
     errors.add(:duplicate_record_found, "Duplicate record found") if (duplicate_table_ids-[self.id]).present?
     #is part of a set or a toy
-    errors.add(:bad_keywords, "Found bad keywords") if (self.name.starts_with?("SET ") or self.name.ends_with?(" SET") or self.name.ends_with?(" TOY") or self.name.include?(" LAMP ") or self.name.ends_with?(" LAMP") or self.name.starts_with?("LAMP ") or self.name.starts_with?("SET:") or self.name.starts_with?("TOY ") or self.name.include?(" SET ") or self.name.include? ("(SET ") or self.name.include?(" SET:") or self.name.include?(" TOY ") or self.name.include?("MINIATURE"))
+    errors.add(:bad_keywords, "Found bad keywords") if self.has_badword
     
   end
   
