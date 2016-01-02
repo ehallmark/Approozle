@@ -11,23 +11,27 @@ class TablesController < ApplicationController
   def appraisal_results
     table = params[:table]
     if table.present?
-      table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'') : @brand_name = ""
-      table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'') : @item_type = ""
-      table.has_key?(:material) ? @material = table[:material].upcase.gsub(/[^0-9A-Z ]/i,'') : @material = ""
-      table.has_key?(:optional_search) ? @name = table[:optional_search].upcase.gsub(/[^0-9A-Z ]/i,'') : @name = ""
-      @from_brand_names = Table.where("brand_name ilike '%#{@brand_name}%' or name ilike '%#{@brand_name}%'") if @brand_name.present?
-      @from_item_types = Table.where("item_type = '#{@item_type}' or name ilike '%#{@item_type}%'") if @item_type.present?
-      @from_materials = Table.where("material ilike '%#{@material}%' or name ilike '%#{@material}%'") if @material.present?
-      @from_names = Table.where(:id => @name.split(" ").collect{|n| Table.search_query(n).map(&:id) }.inject(:&).uniq ) if @name.present?
+      table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
+      table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @item_type = ""
+      table.has_key?(:material) ? @material = table[:material].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @material = ""
+      table.has_key?(:optional_search) ? @name = table[:optional_search].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @name = ""
+      @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")) if @brand_name.present?
+      @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}' or name ilike '%#{item_type}%'"}.join(" or ")) if @item_type.present?
+      @from_materials = Table.where(([@material]+(Table.similar_material_hash[@material] || [])).compact.collect{|material| "material ilike '%#{material}%' or name ilike '%#{material}%'"}.join(" or ")) if @material.present?
+      @from_names = Table.where(:id => @name.split(" ").collect{|name| ([name]+(Table.similar_search_options_hash[name] || [])) }.inject(:+).compact.uniq.collect{|n| Table.search_query(n).map(&:id) }.inject(:+).uniq ) if @name.present?
       @brand_name_count = (@from_brand_names || []).count
       @item_type_count = (@from_item_types || []).count
       @material_count = (@from_materials || []).count
       @name_count = (@from_names || []).count
-      #
+      # Average of mean AND median
       begin @brand_name_price_average = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_average = "N/A" end
+      begin @brand_name_price_average = (@brand_name_price_average.to_f + @from_brand_names.order(:price)[@brand_name_count/2].price)/2 rescue @brand_name_price_average = "N/A" end
       begin @item_type_price_average = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_average = "N/A" end
+      begin @item_type_price_average = (@item_type_price_average.to_f + @from_item_types.order(:price)[@item_type_count/2].price)/2 rescue @item_type_price_average = "N/A" end
       begin @material_price_average = @from_materials.pluck(:price).sum/@material_count rescue @material_price_average = "N/A" end
+      begin @material_price_average = (@material_price_average.to_f + @from_materials.order(:price)[@material_count/2].price)/2 rescue @material_price_average = "N/A" end
       begin @name_price_average = @from_names.pluck(:price).sum/@name_count rescue @name_price_average = "N/A" end
+      begin @name_price_average = (@name_price_average.to_f + @from_names.order(:price)[@name_count/2].price)/2 rescue @name_price_average = "N/A" end
       # variables to standardize above variables
       begin @material_boost_from_item_type = @from_materials.pluck(:item_type_index).sum.to_f/@material_count.to_f rescue @material_boost_from_item_type = "N/A" end
       begin @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f rescue @brand_name_boost_from_item_type = "N/A" end

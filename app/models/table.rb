@@ -42,6 +42,29 @@ class Table < ActiveRecord::Base
     ]
   )
   
+  def self.similar_brand_name_hash
+    {
+      "LAZBOY"=> ["LAZYBOY", "LAZ BOY", "LA Z BOY"]
+    
+    }
+  end
+  
+  def self.similar_item_type_hash
+    {
+    
+    }
+  end
+  
+  def self.similar_search_options_hash
+    {
+    }
+  end
+  
+  def self.similar_material_hash
+    {
+    }
+  end
+  
   def keywords
     self.name.split(" ")
   end
