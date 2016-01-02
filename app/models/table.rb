@@ -15,7 +15,6 @@ class Table < ActiveRecord::Base
   before_validation :capitalize_attributes
   validate :validate_table
   attr_accessor :optional_search 
-
   scope :search_query, lambda {|q| where("name like upper('%#{q}%') or item_type like upper('%#{q}%') or material like upper('%#{q}%') or brand_name like upper('%#{q}%')") }
   scope :item_type, lambda {|item| where("upper(item_type) = '#{item.upcase}'") }
   scope :sorted_by, lambda { |sort_option|

@@ -18,7 +18,7 @@ class TablesController < ApplicationController
       @from_brand_names = Table.where("brand_name ilike '%#{@brand_name}%' or name ilike '%#{@brand_name}%'") if @brand_name.present?
       @from_item_types = Table.where("item_type = '#{@item_type}' or name ilike '%#{@item_type}%'") if @item_type.present?
       @from_materials = Table.where("material ilike '%#{@material}%' or name ilike '%#{@material}%'") if @material.present?
-      @from_names = Table.search_query(@name) if @name.present?
+      @from_names = Table.where(:id => @name.split(" ").collect{|n| Table.search_query(n).map(&:id) }.inject(:&).uniq ) if @name.present?
       @brand_name_count = (@from_brand_names || []).count
       @item_type_count = (@from_item_types || []).count
       @material_count = (@from_materials || []).count
@@ -51,7 +51,7 @@ class TablesController < ApplicationController
       begin @item_type_weighted_by_material = @item_type_adjusted_for_material*@material_count rescue @item_type_weighted_by_material = "N/A" end
       begin @item_type_weighted_by_name = @item_type_adjusted_for_name*@name_count rescue @item_type_weighted_by_name = "N/A" end
       begin @item_type_weighted = @item_type_price_average*@item_type_count rescue @item_type_weighted = "N/A" end
-      begin @brand_name_weighted_by_brand_name = @brand_name_adjusted_for_item_type*@item_type_count rescue @brand_name_weighted_by_brand_name = "N/A" end
+      begin @brand_name_weighted_by_item_type = @brand_name_adjusted_for_item_type*@item_type_count rescue @brand_name_weighted_by_item_type = "N/A" end
       begin @brand_name_weighted_by_material = @brand_name_adjusted_for_material*@material_count rescue @brand_name_weighted_by_material = "N/A" end
       begin @brand_name_weighted_by_name = @brand_name_adjusted_for_name*@name_count rescue @brand_name_weighted_by_name = "N/A" end
       begin @brand_name_weighted = @brand_name_price_average*@brand_name_count rescue @brand_name_weighted = "N/A" end
@@ -60,14 +60,14 @@ class TablesController < ApplicationController
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_item_type_average = weighted_item_type_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_item_type_average = "N/A" end
-      weighted_brand_name_adjustments = [@brand_name_weighted_by_brand_name, @brand_name_weighted_by_material, @brand_name_weighted_by_name, @brand_name_weighted].keep_if{|item|
+      weighted_brand_name_adjustments = [@brand_name_weighted_by_item_type, @brand_name_weighted_by_material, @brand_name_weighted_by_name, @brand_name_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_brand_name_average = weighted_brand_name_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_brand_name_average = "N/A" end
       final_adjustments = [@adjusted_and_weighted_brand_name_average, @adjusted_and_weighted_item_type_average, @adjusted_and_weighted_item_type_average].keep_if{|item|
         item.present? and item != "N/A" and item > 0.1
       }
-      begin @final_price = final_adjustments.sum.to_f/final_adjustments.length.to_f rescue @final_price = "N/A" end
+      begin @final_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_price = "N/A" end
     end
     
   end
