@@ -24,14 +24,18 @@ class TablesController < ApplicationController
       @material_count = (@from_materials || []).count
       @name_count = (@from_names || []).count
       # Average of mean AND median
-      begin @brand_name_price_average = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_average = "N/A" end
-      begin @brand_name_price_average = (@brand_name_price_average.to_f + @from_brand_names.order(:price)[@brand_name_count/2].price)/2 rescue @brand_name_price_average = "N/A" end
-      begin @item_type_price_average = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_average = "N/A" end
-      begin @item_type_price_average = (@item_type_price_average.to_f + @from_item_types.order(:price)[@item_type_count/2].price)/2 rescue @item_type_price_average = "N/A" end
-      begin @material_price_average = @from_materials.pluck(:price).sum/@material_count rescue @material_price_average = "N/A" end
-      begin @material_price_average = (@material_price_average.to_f + @from_materials.order(:price)[@material_count/2].price)/2 rescue @material_price_average = "N/A" end
-      begin @name_price_average = @from_names.pluck(:price).sum/@name_count rescue @name_price_average = "N/A" end
-      begin @name_price_average = (@name_price_average.to_f + @from_names.order(:price)[@name_count/2].price)/2 rescue @name_price_average = "N/A" end
+      begin @brand_name_price_mean = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_average = "N/A" end
+      begin @brand_name_price_median = @from_brand_names.order(:price)[@brand_name_count/2].price rescue @brand_name_price_average = "N/A" end
+      begin @brand_name_price_average = [@brand_name_price_median,@brand_name_price_median,@brand_name_price_mean].sum.to_f/3.0 rescue @brand_name_price_average = "N/A" end
+      begin @item_type_price_mean = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_average = "N/A" end
+      begin @item_type_price_median = @from_item_types.order(:price)[@item_type_count/2].price rescue @item_type_price_average = "N/A" end
+      begin @item_type_price_average = [@item_type_price_median,@item_type_price_median,@item_type_price_mean].sum.to_f/3.0 rescue @item_type_price_average = "N/A" end
+      begin @material_price_mean = @from_materials.pluck(:price).sum/@material_count rescue @material_price_average = "N/A" end
+      begin @material_price_median = @from_materials.order(:price)[@material_count/2].price rescue @material_price_average = "N/A" end
+      begin @material_price_average = [@material_price_median,@material_price_median,@material_price_mean].sum.to_f/3.0 rescue @material_price_average = "N/A" end
+      begin @name_price_mean = @from_names.pluck(:price).sum/@name_count rescue @name_price_average = "N/A" end
+      begin @name_price_median = @from_names.order(:price)[@name_count/2].price rescue @name_price_average = "N/A" end
+      begin @name_price_average = [@name_price_median,@name_price_median,@name_price_mean].sum.to_f/3.0 rescue @name_price_average = "N/A" end
       # variables to standardize above variables
       begin @material_boost_from_item_type = @from_materials.pluck(:item_type_index).sum.to_f/@material_count.to_f rescue @material_boost_from_item_type = "N/A" end
       begin @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f rescue @brand_name_boost_from_item_type = "N/A" end
@@ -100,10 +104,10 @@ class TablesController < ApplicationController
     # we only want single items so skip anything with 'SET' in it
     sem3.products_field( "search", "Furniture" )
     sem3.products_field( "name", "include" , product_type )
-    sem3.products_field( "name", "exclude" , "set toy miniature" ) 
+    product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
+    sem3.products_field( "name", "exclude" , ([params[:exclude]]+Table.badwords+(Table.badwords_by_item_type[product_type] || [])).compact.uniq.join(" ") ) 
     sem3.products_field( "brand", params[:brand_name]) if params[:brand_name].present?
     sem3.products_field( "price", "gt", 20 )
-    product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
     begin
       offset = Float(params[:offset])
       offset = offset.to_i
@@ -191,32 +195,38 @@ class TablesController < ApplicationController
     end
     puts "New records created: #{new_record_count}"
     
-    #update brand name index
-    brand_names = Table.order(:brand_name).select("brand_name").uniq.map(&:brand_name)
-    table_brand_name_data = Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.id, tables.brand_name, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
-      [t.brand_name,t.avg_price]
-    }.uniq.flatten
-    table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
-    brand_names.each do |brand_name|
-      unless Table.where(brand_name: brand_name).update_all(brand_name_index: table_brand_name_hash[brand_name])
-        puts t.errors.messages.inspect
+    if new_record_count > 0
+      #update brand name index
+      brand_names = Table.order(:brand_name).select("brand_name").uniq.map(&:brand_name)
+      table_brand_name_data = Table.joins("join tables as tables_2 on (tables.brand_name = tables_2.brand_name)").where('tables_2.price is not NULL and tables.brand_name is not NULL').select("tables.id, tables.brand_name, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
+        [t.brand_name,t.avg_price]
+      }.uniq.flatten
+      table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
+      brand_names.each do |brand_name|
+        tables = Table.where(brand_name: brand_name)
+        median = tables.map(&:price).sort[tables.length/2] # median
+        unless Table.where(brand_name: brand_name).update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
+          puts t.errors.messages.inspect
+        end
       end
+      puts "Brand name index updated"
+      
+      #update item type index
+      item_types = Table.order(:item_type).select("item_type").uniq.map(&:item_type)
+      table_item_types_data = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.id, tables.item_type, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
+        [t.item_type,t.avg_price]
+      }.uniq.flatten
+      table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
+      item_types.each do |item_type|
+        tables = Table.where(item_type: item_type)
+        median = tables.map(&:price).sort[tables.length/2] # median
+        unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
+          puts t.errors.messages.inspect
+        end
+      end  
+      puts "Item type index updated"
+      puts "Total new records created: #{new_record_count}"
     end
-    puts "Brand name index updated"
-    
-    #update item type index
-    item_types = Table.order(:item_type).select("item_type").uniq.map(&:item_type)
-    table_item_types_data = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.id, tables.item_type, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
-      [t.item_type,t.avg_price]
-    }.uniq.flatten
-    table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
-    item_types.each do |item_type|
-      unless Table.where(item_type: item_type).update_all(item_type_index: table_item_type_hash[item_type])
-        puts t.errors.messages.inspect
-      end
-    end    
-    puts "Item type index updated"
-    puts "Total new records created: #{new_record_count}"
 
     redirect_to tables_path
   end
@@ -228,7 +238,9 @@ class TablesController < ApplicationController
     }.uniq.flatten
     table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
     item_types.each do |item_type|
-      unless Table.where(item_type: item_type).update_all(item_type_index: table_item_type_hash[item_type])
+      tables = Table.where(item_type: item_type)
+      median = tables.map(&:price).sort[tables.length/2] # median
+      unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
         puts t.errors.messages.inspect
       end
     end
@@ -242,7 +254,9 @@ class TablesController < ApplicationController
     }.uniq.flatten
     table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
     brand_names.each do |brand_name|
-      unless Table.where(brand_name: brand_name).update_all(brand_name_index: table_brand_name_hash[brand_name])
+      tables = Table.where(brand_name: brand_name)
+      median = tables.map(&:price).sort[tables.length/2] # median
+      unless Table.where(brand_name: brand_name).update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
         puts t.errors.messages.inspect
       end
     end

@@ -7,7 +7,5 @@
 	<%= text_field_tag :brand_name %><br />
 	<%= label_tag :offset %><br />
 	<%= text_field_tag :offset %><br />
-	<%= label_tag :exclude %><br />
-	<%= text_field_tag :exclude %><br />
 	<%= submit_tag "Seed" %>
 <% end %>

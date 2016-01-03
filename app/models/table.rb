@@ -51,7 +51,7 @@ class Table < ActiveRecord::Base
   
   def self.similar_item_type_hash
     {
-    
+      
     }
   end
   
@@ -71,6 +71,12 @@ class Table < ActiveRecord::Base
   
   def self.badwords
     ["TOY","TOYS","MINIATURE","LAMPS","DOLLS","SET","SETS","DOLL","DOLLHOUSE"]
+  end
+  
+  def self.badwords_by_item_type
+    {
+      "BENCH" => ["PICNIC TABLE", "BENCHES"]
+    }
   end
   
   def has_badword
