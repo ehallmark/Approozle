@@ -42,6 +42,25 @@ class Table < ActiveRecord::Base
     ]
   )
   
+  def self.standardized_item_types
+    {}
+  end
+  
+  def self.standardized_brand_names
+    {
+      "KOHLS"=>"KOHL'S",
+      "KOHL S"=>"KOHL'S",
+      "KOHL"=>"KOHL'S",
+      "CRATE  BARREL"=>"CRATE & BARREL",
+      "CRATE BARREL"=>"CRATE & BARREL",
+      "HANCOCK MOORE"=>"HANCOCK & MOORE",
+      "HANCOCK  MOORE"=>"HANCOCK & MOORE",
+      "WALMART"=>"WAL-MART",
+      "LAZBOY"=>"LA Z BOY",
+      "LAZYBOY"=>"LA Z BOY"
+    }
+  end
+  
   def self.similar_brand_name_hash
     {
       "LAZBOY"=> ["LAZYBOY", "LAZ BOY", "LA Z BOY"]
@@ -131,7 +150,7 @@ class Table < ActiveRecord::Base
         "KOHLS"=>0.7,
         "LA BARGE"=>0.4,
         "LANE"=>0.6,
-        "LAZBOY"=>0.6,
+        "LA Z BOY"=>0.6,
         "LEXINGTON"=>0.5,
         "LILLIAN AUGUST"=>0.4,
         "MAITLAND SMITH"=>0.4,
@@ -161,7 +180,7 @@ class Table < ActiveRecord::Base
         "THOMASVILLE"=>0.5,
         "TRICA"=>0.7,
         "VANGUARD"=>0.5,
-        "WALMART"=>0.7,
+        "WAL-MART"=>0.7,
         "WEST ELM"=>0.7,
         "WILLIAMS SONOMA"=>0.5,
         "WOODBRIDGE"=>0.7

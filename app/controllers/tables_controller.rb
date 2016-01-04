@@ -75,7 +75,9 @@ class TablesController < ApplicationController
       final_adjustments = [@adjusted_and_weighted_brand_name_average, @adjusted_and_weighted_item_type_average, @adjusted_and_weighted_item_type_average].keep_if{|item|
         item.present? and item != "N/A" and item > 0.1
       }
-      begin @final_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_price = "N/A" end
+      begin @final_retail_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_retial_price = "N/A" end
+      begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.7)].max rescue @used_price_factor = "N/A" end
+      begin @final_used_price = @final_retail_price.to_f * @used_price_factor.to_f rescue @final_used_price = "N/A" end
     end
     
   end

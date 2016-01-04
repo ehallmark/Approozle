@@ -40,9 +40,16 @@
 		<h4>
 			Price Estimated From Brand Name Index: <%= number_to_currency @adjusted_and_weighted_brand_name_average %><br />
 		</h4>
+		<h4>
+			Retail Price Estimate: <%= number_to_currency @final_retail_price %>
+		</h4>
+		<h4>
+			Used Price Factor: <%= number_to_percentage @used_price_factor %>
+		</h4>
 		<h3>
-			Final Price Estimate: <%= number_to_currency @final_price %>
+			Final Used Price Estimate: <%= number_to_currency @final_used_price %>
 		</h3>
+		
 	</div>
 </div>
 <br />
