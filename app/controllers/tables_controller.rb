@@ -24,45 +24,142 @@ class TablesController < ApplicationController
       @material_count = (@from_materials || []).count
       @name_count = (@from_names || []).count
       # Average of mean AND median
-      begin @brand_name_price_mean = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_average = "N/A" end
-      begin @brand_name_price_median = @from_brand_names.order(:price)[@brand_name_count/2].price rescue @brand_name_price_average = "N/A" end
-      begin @brand_name_price_average = [@brand_name_price_median,@brand_name_price_median,@brand_name_price_mean].sum.to_f/3.0 rescue @brand_name_price_average = "N/A" end
-      begin @item_type_price_mean = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_average = "N/A" end
-      begin @item_type_price_median = @from_item_types.order(:price)[@item_type_count/2].price rescue @item_type_price_average = "N/A" end
-      begin @item_type_price_average = [@item_type_price_median,@item_type_price_median,@item_type_price_mean].sum.to_f/3.0 rescue @item_type_price_average = "N/A" end
-      begin @material_price_mean = @from_materials.pluck(:price).sum/@material_count rescue @material_price_average = "N/A" end
-      begin @material_price_median = @from_materials.order(:price)[@material_count/2].price rescue @material_price_average = "N/A" end
-      begin @material_price_average = [@material_price_median,@material_price_median,@material_price_mean].sum.to_f/3.0 rescue @material_price_average = "N/A" end
-      begin @name_price_mean = @from_names.pluck(:price).sum/@name_count rescue @name_price_average = "N/A" end
-      begin @name_price_median = @from_names.order(:price)[@name_count/2].price rescue @name_price_average = "N/A" end
-      begin @name_price_average = [@name_price_median,@name_price_median,@name_price_mean].sum.to_f/3.0 rescue @name_price_average = "N/A" end
+      begin @brand_name_price_mean = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_mean = "N/A" end
+      begin @brand_name_price_median = @from_brand_names.order(:price)[@brand_name_count/2].price rescue @brand_name_price_median = "N/A" end
+      begin @brand_name_price_average = [@brand_name_price_median,@brand_name_price_median,@brand_name_price_mean].sum/3.0 rescue @brand_name_price_average = "N/A" end
+      begin @item_type_price_mean = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_mean = "N/A" end
+      begin @item_type_price_median = @from_item_types.order(:price)[@item_type_count/2].price rescue @item_type_price_median = "N/A" end
+      begin @item_type_price_average = [@item_type_price_median,@item_type_price_median,@item_type_price_mean].sum/3.0 rescue @item_type_price_average = "N/A" end
+      begin @material_price_mean = @from_materials.pluck(:price).sum/@material_count rescue @material_price_mean = "N/A" end
+      begin @material_price_median = @from_materials.order(:price)[@material_count/2].price rescue @material_price_median = "N/A" end
+      begin @material_price_average = [@material_price_median,@material_price_median,@material_price_mean].sum/3.0 rescue @material_price_average = "N/A" end
+      begin @name_price_mean = @from_names.pluck(:price).sum/@name_count rescue @name_price_mean = "N/A" end
+      begin @name_price_median = @from_names.order(:price)[@name_count/2].price rescue @name_price_median = "N/A" end
+      begin @name_price_average = [@name_price_median,@name_price_median,@name_price_mean].sum/3.0 rescue @name_price_average = "N/A" end
       # variables to standardize above variables
-      begin @material_boost_from_item_type = @from_materials.pluck(:item_type_index).sum.to_f/@material_count.to_f rescue @material_boost_from_item_type = "N/A" end
-      begin @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f rescue @brand_name_boost_from_item_type = "N/A" end
-      begin @name_boost_from_item_type = @from_names.pluck(:item_type_index).sum.to_f/@name_count.to_f rescue @name_boost_from_item_type = "N/A" end
-      begin @material_boost_from_brand_name = @from_materials.pluck(:brand_name_index).sum.to_f/@material_count.to_f rescue @material_boost_from_brand_name = "N/A" end
-      begin @item_type_boost_from_brand_name = @from_item_types.pluck(:brand_name_index).sum.to_f/@item_type_count.to_f rescue @item_type_boost_from_brand_name = "N/A" end
-      begin @name_boost_from_brand_name = @from_names.pluck(:brand_name_index).sum.to_f/@name_count.to_f rescue @name_boost_from_brand_name = "N/A" end
+      begin 
+        raise if @material_count == 0
+        @material_boost_from_item_type = @from_materials.pluck(:item_type_index).sum.to_f/@material_count.to_f 
+      rescue 
+        @material_boost_from_item_type = "N/A" 
+      end
+      begin 
+        raise if @brand_name_count == 0
+        @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f 
+      rescue
+        @brand_name_boost_from_item_type = "N/A"
+      end
+      begin
+        raise if @name_count == 0
+        @name_boost_from_item_type = @from_names.pluck(:item_type_index).sum.to_f/@name_count.to_f
+      rescue 
+        @name_boost_from_item_type = "N/A" 
+      end
+      begin
+        raise if @material_count == 0
+        @material_boost_from_brand_name = @from_materials.pluck(:brand_name_index).sum.to_f/@material_count.to_f
+      rescue
+        @material_boost_from_brand_name = "N/A" 
+      end
+      begin
+        raise if @item_type_count == 0
+        @item_type_boost_from_brand_name = @from_item_types.pluck(:brand_name_index).sum.to_f/@item_type_count.to_f 
+      rescue
+        @item_type_boost_from_brand_name = "N/A"
+      end
+      begin 
+        raise if @name_count == 0
+        @name_boost_from_brand_name = @from_names.pluck(:brand_name_index).sum.to_f/@name_count.to_f
+      rescue
+        @name_boost_from_brand_name = "N/A"
+      end
       # readjust variables to account for weakness of material attribute completeness
-      #@brand_name_count = (@item_type_count*5)/6 if @brand_name_count > 0 
-      #@name_count = @item_type_count/2 if @name_count > 0
-      #@material_count = @item_type_count/4 if @material_count > 0
       @total_count = @brand_name_count+@item_type_count+@material_count+@name_count
       # get weighted variables
-      begin @item_type_adjusted_for_brand_name = @item_type_price_average*@brand_name_price_average/@brand_name_boost_from_item_type rescue @item_type_adjusted_for_brand_name = "N/A" end
-      begin @item_type_adjusted_for_material = @item_type_price_average*@material_price_average/@material_boost_from_item_type rescue @item_type_adjusted_for_material = "N/A" end
-      begin @item_type_adjusted_for_name = @item_type_price_average*@name_price_average/@name_boost_from_item_type rescue @item_type_adjusted_for_name = "N/A" end
-      begin @brand_name_adjusted_for_item_type = @brand_name_price_average*@item_type_price_average/@item_type_boost_from_brand_name rescue @brand_name_adjusted_for_item_type = "N/A" end
-      begin @brand_name_adjusted_for_material = @brand_name_price_average*@material_price_average/@material_boost_from_brand_name rescue @brand_name_adjusted_for_material = "N/A" end
-      begin @brand_name_adjusted_for_name = @brand_name_price_average*@name_price_average/@name_boost_from_brand_name rescue @brand_name_adjusted_for_name = "N/A" end
-      begin @item_type_weighted_by_brand_name = @item_type_adjusted_for_brand_name*@brand_name_count rescue @item_type_weighted_by_brand_name = "N/A" end
-      begin @item_type_weighted_by_material = @item_type_adjusted_for_material*@material_count rescue @item_type_weighted_by_material = "N/A" end
-      begin @item_type_weighted_by_name = @item_type_adjusted_for_name*@name_count rescue @item_type_weighted_by_name = "N/A" end
-      begin @item_type_weighted = @item_type_price_average*@item_type_count rescue @item_type_weighted = "N/A" end
-      begin @brand_name_weighted_by_item_type = @brand_name_adjusted_for_item_type*@item_type_count rescue @brand_name_weighted_by_item_type = "N/A" end
-      begin @brand_name_weighted_by_material = @brand_name_adjusted_for_material*@material_count rescue @brand_name_weighted_by_material = "N/A" end
-      begin @brand_name_weighted_by_name = @brand_name_adjusted_for_name*@name_count rescue @brand_name_weighted_by_name = "N/A" end
-      begin @brand_name_weighted = @brand_name_price_average*@brand_name_count rescue @brand_name_weighted = "N/A" end
+      begin 
+        raise if @brand_name_count == 0 or @item_type_count == 0
+        @item_type_adjusted_for_brand_name = @item_type_price_average*@brand_name_price_average/@brand_name_boost_from_item_type
+      rescue 
+        @item_type_adjusted_for_brand_name = "N/A" 
+      end
+      begin 
+        raise if @item_type_count == 0 or @material_count == 0
+        @item_type_adjusted_for_material = @item_type_price_average*@material_price_average/@material_boost_from_item_type
+      rescue 
+        @item_type_adjusted_for_material = "N/A"
+      end
+      begin 
+        raise if @item_type_count == 0 or @name_count == 0
+        @item_type_adjusted_for_name = @item_type_price_average*@name_price_average/@name_boost_from_item_type
+      rescue
+        @item_type_adjusted_for_name = "N/A" 
+      end
+      begin 
+        raise if @brand_name_count == 0 or @item_type_count == 0
+        @brand_name_adjusted_for_item_type = @brand_name_price_average*@item_type_price_average/@item_type_boost_from_brand_name 
+      rescue 
+        @brand_name_adjusted_for_item_type = "N/A" 
+      end
+      begin 
+        raise if @brand_name_count == 0 or @material_count == 0
+        @brand_name_adjusted_for_material = @brand_name_price_average*@material_price_average/@material_boost_from_brand_name 
+      rescue 
+        @brand_name_adjusted_for_material = "N/A" 
+      end
+      begin 
+        raise if @brand_name_count == 0 or @name_count == 0
+        @brand_name_adjusted_for_name = @brand_name_price_average*@name_price_average/@name_boost_from_brand_name 
+      rescue 
+        @brand_name_adjusted_for_name = "N/A" 
+      end
+      begin 
+        raise if @item_type_count == 0 or @brand_name_count == 0
+        @item_type_weighted_by_brand_name = @item_type_adjusted_for_brand_name*@brand_name_count 
+      rescue 
+        @item_type_weighted_by_brand_name = "N/A" 
+      end
+      begin 
+        raise if @item_type_count == 0 or @material_count == 0
+        @item_type_weighted_by_material = @item_type_adjusted_for_material*@material_count
+      rescue 
+        @item_type_weighted_by_material = "N/A" 
+      end
+      begin
+        raise if @item_type_count == 0 or @name_count == 0
+        @item_type_weighted_by_name = @item_type_adjusted_for_name*@name_count 
+      rescue
+        @item_type_weighted_by_name = "N/A"
+      end
+      begin 
+        raise if @item_type_count == 0
+        @item_type_weighted = @item_type_price_average*@item_type_count 
+      rescue 
+        @item_type_weighted = "N/A" 
+      end
+      begin 
+        raise if @brand_name_count == 0 or @item_type_count == 0
+        @brand_name_weighted_by_item_type = @brand_name_adjusted_for_item_type*@item_type_count
+      rescue 
+        @brand_name_weighted_by_item_type = "N/A" 
+      end
+      begin
+        raise if @brand_name_count == 0 or @material_count == 0
+        @brand_name_weighted_by_material = @brand_name_adjusted_for_material*@material_count
+      rescue 
+        @brand_name_weighted_by_material = "N/A"
+      end
+      begin 
+        raise if @brand_name_count == 0 or @name_count == 0
+        @brand_name_weighted_by_name = @brand_name_adjusted_for_name*@name_count 
+      rescue
+        @brand_name_weighted_by_name = "N/A"
+      end
+      begin 
+        raise if @brand_name_count == 0
+        @brand_name_weighted = @brand_name_price_average*@brand_name_count 
+      rescue
+        @brand_name_weighted = "N/A" 
+      end
       # get final results
       weighted_item_type_adjustments = [@item_type_weighted_by_brand_name, @item_type_weighted_by_material, @item_type_weighted_by_name, @item_type_weighted].keep_if{|item|
         item.present? and item != "N/A"
