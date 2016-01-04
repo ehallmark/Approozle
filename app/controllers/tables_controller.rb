@@ -199,97 +199,99 @@ class TablesController < ApplicationController
     # Set up a client to talk to the Semantics3 API
     sem3 = Semantics3::Products.new(API_KEY,API_SECRET)
     # Build the request
-    product_type = params[:product_type]
-    # we only want single items so skip anything with 'SET' in it
-    sem3.products_field( "search", "Furniture" )
-    sem3.products_field( "name", "include" , product_type )
-    product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
-    sem3.products_field( "name", "exclude" , ([params[:exclude]]+Table.badwords+(Table.badwords_by_item_type[product_type] || [])).compact.uniq.join(" ") ) 
-    sem3.products_field( "search", params[:brand_name]) if params[:brand_name].present?
-    sem3.products_field( "price", "gt", 20 )
-    begin
-      offset = Float(params[:offset])
-      offset = offset.to_i
-    rescue
-      offset = nil
-    end
-    sem3.products_field( "offset", offset ) if offset.present?
-    # Run the request
-    begin 
-      @productsHash = sem3.get_products()
-    rescue
-      @productsHash = {}
-    end
-    
- 
-    page = 0 
     new_record_count = 0
-    while (@productsHash.present?) do
-      page = page + 1 
-      puts "We are at page = #{page}"
-      puts @productsHash.inspect
-      break if not @productsHash.try(:[],"results").present?
-      @productsHash["results"].each do |p|
-        name = p.try(:[],"name")
-        material = []
-        p.each{|k,v| 
-          material.push(v.upcase.gsub(/[^0-9A-Z ]/i,'')) if k.downcase.include?('material') and v.present?
-        }
-        puts p.inspect
-        brand = p.try(:[],"brand")
-        brand = p.try(:[],"seller") if not brand.present?
-        brand = p.try(:[],"manufacturer") if not brand.present?
-        price = p.try(:[],"price")
-        features = p["features"] if p.has_key?("features")
-        if features.present? and not material.present?
-          features.each{|k,v| 
+    product_type_seed = params[:product_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip
+    ([product_type_seed]+(Table.similar_item_type_hash[product_type_seed] || [])).compact.uniq.each do |product_type|
+      # we only want single items so skip anything with 'SET' in it
+      sem3.products_field( "search", "Furniture" )
+      sem3.products_field( "name", "include" , product_type )
+      product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
+      sem3.products_field( "name", "exclude" , ([params[:exclude]]+Table.badwords+(Table.badwords_by_item_type[product_type] || [])).compact.uniq.join(" ") ) 
+      sem3.products_field( "search", params[:brand_name]) if params[:brand_name].present?
+      sem3.products_field( "price", "gt", 20 )
+      begin
+        offset = Float(params[:offset])
+        offset = offset.to_i
+      rescue
+        offset = nil
+      end
+      sem3.products_field( "offset", offset ) if offset.present?
+      # Run the request
+      begin 
+        @productsHash = sem3.get_products()
+      rescue
+        @productsHash = {}
+      end
+      
+   
+      page = 0 
+      while (@productsHash.present?) do
+        page = page + 1 
+        puts "We are at page = #{page}"
+        puts @productsHash.inspect
+        break if not @productsHash.try(:[],"results").present?
+        @productsHash["results"].each do |p|
+          name = p.try(:[],"name")
+          material = []
+          p.each{|k,v| 
             material.push(v.upcase.gsub(/[^0-9A-Z ]/i,'')) if k.downcase.include?('material') and v.present?
           }
-        end
-        material = material.uniq.join(' ')
-        puts price
-        puts material
-        brand = brand.upcase.gsub(/[^0-9A-Z ]/i,'') if brand.present?
-        name = name.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
-        material = material.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
-        if price.present? and brand.present? and name.present?
-          pHash = {
-            price: price,
-            brand_name: brand,
-            item_type: product_type,
-            name: name
-          }
-          # looks to update material in case I come up with a better algorithm in the future
-          
-          identical_tables = Table.where(pHash.merge(material: material))
-          new_record_count -= identical_tables.count
-          identical_tables.destroy_all
-          less_interesting_tables = Table.where(pHash.merge(material: nil))
-          new_record_count -= less_interesting_tables.count
-          less_interesting_tables.destroy_all
-          # Destroy common materials
-          common_tables = Table.where(pHash)
-          if common_tables.exists?
-            common_tables.each do |t|
-              if material.include?(t.material)
-                t.destroy
-                new_record_count -= 1
+          puts p.inspect
+          brand = p.try(:[],"brand")
+          brand = p.try(:[],"seller") if not brand.present?
+          brand = p.try(:[],"manufacturer") if not brand.present?
+          price = p.try(:[],"price")
+          features = p["features"] if p.has_key?("features")
+          if features.present? and not material.present?
+            features.each{|k,v| 
+              material.push(v.upcase.gsub(/[^0-9A-Z ]/i,'')) if k.downcase.include?('material') and v.present?
+            }
+          end
+          material = material.uniq.join(' ')
+          puts price
+          puts material
+          brand = brand.upcase.gsub(/[^0-9A-Z ]/i,'') if brand.present?
+          name = name.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
+          material = material.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
+          if price.present? and brand.present? and name.present?
+            pHash = {
+              price: price,
+              brand_name: brand,
+              item_type: product_type_seed,
+              name: name
+            }
+            # looks to update material in case I come up with a better algorithm in the future
+            
+            identical_tables = Table.where(pHash.merge(material: material))
+            new_record_count -= identical_tables.count
+            identical_tables.destroy_all
+            less_interesting_tables = Table.where(pHash.merge(material: nil))
+            new_record_count -= less_interesting_tables.count
+            less_interesting_tables.destroy_all
+            # Destroy common materials
+            common_tables = Table.where(pHash)
+            if common_tables.exists?
+              common_tables.each do |t|
+                if material.include?(t.material)
+                  t.destroy
+                  new_record_count -= 1
+                end
               end
             end
-          end
-          if table = Table.create(pHash.merge(material: material))     
-            new_record_count += 1
-          else
-             puts table.errors.messages.inspect
+            if table = Table.create(pHash.merge(material: material))     
+              new_record_count += 1
+            else
+               puts table.errors.messages.inspect
+            end
           end
         end
-      end
-       
-      # Goto the next 'page'
-      begin
-        @productsHash = sem3.iterate_products
-      rescue
-        break
+         
+        # Goto the next 'page'
+        begin
+          @productsHash = sem3.iterate_products
+        rescue
+          break
+        end
       end
     end
     puts "New records created: #{new_record_count}"
@@ -303,8 +305,13 @@ class TablesController < ApplicationController
       table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
       brand_names.each do |brand_name|
         tables = Table.where(brand_name: brand_name)
-        median = tables.map(&:price).sort[tables.count/2] # median
-        unless Table.where(brand_name: brand_name).update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
+        next if tables.count == 0
+        if tables.count%2 == 1 #odd
+          median = tables.map(&:price).sort[tables.count/2] # median
+        else #even and so > 1 since it can't be 0
+          median = [tables.map(&:price).sort[tables.count/2],tables.map(&:price).sort[(tables.count+1)/2]].sum/2.0 # median
+        end
+        unless tables.update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
           puts t.errors.messages.inspect
         end
       end
@@ -318,7 +325,12 @@ class TablesController < ApplicationController
       table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
       item_types.each do |item_type|
         tables = Table.where(item_type: item_type)
-        median = tables.map(&:price).sort[tables.count/2] # median
+        next if tables.count == 0
+        if tables.count%2 == 1 #odd
+          median = tables.map(&:price).sort[tables.count/2] # median
+        else #even and so > 1 since it can't be 0
+          median = [tables.map(&:price).sort[tables.count/2],tables.map(&:price).sort[(tables.count+1)/2]].sum/2.0 # median
+        end
         unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
           puts t.errors.messages.inspect
         end
@@ -338,7 +350,12 @@ class TablesController < ApplicationController
     table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
     item_types.each do |item_type|
       tables = Table.where(item_type: item_type)
-      median = tables.map(&:price).sort[tables.count/2] # median
+      next if tables.count == 0
+      if tables.count%2 == 1 #odd
+        median = tables.map(&:price).sort[tables.count/2] # median
+      else #even and so > 1 since it can't be 0
+        median = [tables.map(&:price).sort[tables.count/2],tables.map(&:price).sort[(tables.count+1)/2]].sum/2.0 # median
+      end
       unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
         puts t.errors.messages.inspect
       end
@@ -354,8 +371,13 @@ class TablesController < ApplicationController
     table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
     brand_names.each do |brand_name|
       tables = Table.where(brand_name: brand_name)
-      median = tables.map(&:price).sort[tables.count/2] # median
-      unless Table.where(brand_name: brand_name).update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
+      next if tables.count == 0
+      if tables.count%2 == 1 #odd
+        median = tables.map(&:price).sort[tables.count/2] # median
+      else #even and so > 1 since it can't be 0
+        median = [tables.map(&:price).sort[tables.count/2],tables.map(&:price).sort[(tables.count+1)/2]].sum/2.0 # median
+      end
+      unless tables.update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
         puts t.errors.messages.inspect
       end
     end
