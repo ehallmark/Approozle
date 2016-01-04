@@ -44,7 +44,7 @@
 			Retail Price Estimate: <%= number_to_currency @final_retail_price %>
 		</h4>
 		<h4>
-			Used Price Factor: <%= number_to_percentage @used_price_factor %>
+			Used Price Factor: <%= (@used_price_factor == "N/A") ? @used_price_factor : (@used_price_factor*100).to_s+'%' %>
 		</h4>
 		<h3>
 			Final Used Price Estimate: <%= number_to_currency @final_used_price %>
