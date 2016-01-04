@@ -106,7 +106,7 @@ class TablesController < ApplicationController
     sem3.products_field( "name", "include" , product_type )
     product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
     sem3.products_field( "name", "exclude" , ([params[:exclude]]+Table.badwords+(Table.badwords_by_item_type[product_type] || [])).compact.uniq.join(" ") ) 
-    sem3.products_field( "brand", params[:brand_name]) if params[:brand_name].present?
+    sem3.products_field( "search", params[:brand_name]) if params[:brand_name].present?
     sem3.products_field( "price", "gt", 20 )
     begin
       offset = Float(params[:offset])
@@ -204,7 +204,7 @@ class TablesController < ApplicationController
       table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
       brand_names.each do |brand_name|
         tables = Table.where(brand_name: brand_name)
-        median = tables.map(&:price).sort[tables.length/2] # median
+        median = tables.map(&:price).sort[tables.count/2] # median
         unless Table.where(brand_name: brand_name).update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
           puts t.errors.messages.inspect
         end
@@ -219,7 +219,7 @@ class TablesController < ApplicationController
       table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
       item_types.each do |item_type|
         tables = Table.where(item_type: item_type)
-        median = tables.map(&:price).sort[tables.length/2] # median
+        median = tables.map(&:price).sort[tables.count/2] # median
         unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
           puts t.errors.messages.inspect
         end
@@ -239,7 +239,7 @@ class TablesController < ApplicationController
     table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
     item_types.each do |item_type|
       tables = Table.where(item_type: item_type)
-      median = tables.map(&:price).sort[tables.length/2] # median
+      median = tables.map(&:price).sort[tables.count/2] # median
       unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
         puts t.errors.messages.inspect
       end
@@ -255,7 +255,7 @@ class TablesController < ApplicationController
     table_brand_name_hash = Hash[table_brand_name_data.each_slice(2).to_a]    
     brand_names.each do |brand_name|
       tables = Table.where(brand_name: brand_name)
-      median = tables.map(&:price).sort[tables.length/2] # median
+      median = tables.map(&:price).sort[tables.count/2] # median
       unless Table.where(brand_name: brand_name).update_all(brand_name_index: [median,median,table_brand_name_hash[brand_name]].sum/3.0)
         puts t.errors.messages.inspect
       end
