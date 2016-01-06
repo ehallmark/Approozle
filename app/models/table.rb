@@ -66,6 +66,7 @@ class Table < ActiveRecord::Base
   def self.similar_brand_name_hash
     {
       "LAZBOY"=>["LAZYBOY", "LAZ BOY", "LA Z BOY"],
+      "LA Z BOY"=>["LAZYBOY","LAZBOY"],
       "KOHLS"=>["KOHL S","KOHL"],
     
     }
@@ -172,7 +173,9 @@ class Table < ActiveRecord::Base
   
   def self.badwords_by_item_type
     {
-      "BENCH" => ["PICNIC TABLE", "BENCHES"]
+      "BENCH" => ["PICNIC TABLE", "BENCHES"],
+      "CHINA HUTCH" => ["TACKBOARD"],
+      "BUFFET"=>["GUN"]
     }
   end
   
@@ -240,7 +243,7 @@ class Table < ActiveRecord::Base
         "NORWALK"=>0.6,
         "PENNSYLVANIA HOUSE"=>0.4,
         "PIER 1"=>0.7,
-        "POTERRY BARN"=>0.6,
+        "POTTERY BARN"=>0.6,
         "PULASKI"=>0.5,
         "RESTORATION HARDWARE"=>0.6,
         "ROCHE BOBOIS"=>0.4,

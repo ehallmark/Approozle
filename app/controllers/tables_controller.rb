@@ -207,7 +207,7 @@ class TablesController < ApplicationController
       sem3.products_field( "name", "include" , product_type )
       product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
       sem3.products_field( "name", "exclude" , ([params[:exclude]]+Table.badwords+(Table.badwords_by_item_type[product_type] || [])).compact.uniq.join(" ") ) 
-      sem3.products_field( "search", params[:brand_name]) if params[:brand_name].present?
+      sem3.products_field( "brand", params[:brand_name]) if params[:brand_name].present?
       sem3.products_field( "price", "gt", 20 )
       begin
         offset = Float(params[:offset])
