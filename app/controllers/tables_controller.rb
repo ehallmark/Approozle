@@ -173,7 +173,7 @@ class TablesController < ApplicationController
         item.present? and item != "N/A" and item > 0.1
       }
       begin @final_retail_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_retial_price = "N/A" end
-      begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.7)].max rescue @used_price_factor = "N/A" end
+      begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.4)].max rescue @used_price_factor = "N/A" end
       begin @final_used_price = @final_retail_price.to_f * (1.0-@used_price_factor).to_f rescue @final_used_price = "N/A" end
     end
     
@@ -318,23 +318,20 @@ class TablesController < ApplicationController
       puts "Brand name index updated"
       
       #update item type index
-      item_types = Table.order(:item_type).select("item_type").uniq.map(&:item_type)
-      table_item_types_data = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.id, tables.item_type, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
-        [t.item_type,t.avg_price]
-      }.uniq.flatten
-      table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
-      item_types.each do |item_type|
-        tables = Table.where(item_type: item_type)
+      Table.all_item_types.each do |item_type|
+        tables = Table.where(item_type: ([item_type]+(Table.similar_item_type_hash[item_type] || []))).where("price is not null")
         next if tables.count == 0
+        prices = tables.map(&:price).sort
         if tables.count%2 == 1 #odd
-          median = tables.map(&:price).sort[tables.count/2] # median
+          median = prices[tables.count/2] # median
         else #even and so > 1 since it can't be 0
-          median = [tables.map(&:price).sort[tables.count/2],tables.map(&:price).sort[(tables.count+1)/2]].sum/2.0 # median
+          median = [prices[tables.count/2],prices[(tables.count+1)/2]].sum/2.0 # median
         end
-        unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
+        mean = prices.sum/prices.length
+        unless tables.update_all(item_type_index: [median,median,mean].sum/3.0)
           puts t.errors.messages.inspect
         end
-      end  
+      end 
       puts "Item type index updated"
       puts "Total new records created: #{new_record_count}"
     end
@@ -343,20 +340,18 @@ class TablesController < ApplicationController
   end
   
   def update_tables_item_type_index
-    item_types = Table.order(:item_type).select("item_type").uniq.map(&:item_type)
-    table_item_types_data = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where('tables_2.price is not NULL and tables.item_type is not NULL').select("tables.id, tables.item_type, avg(tables_2.price) as avg_price").group("tables.id").collect{|t|
-      [t.item_type,t.avg_price]
-    }.uniq.flatten
-    table_item_type_hash = Hash[table_item_types_data.each_slice(2).to_a]    
-    item_types.each do |item_type|
-      tables = Table.where(item_type: item_type)
+    # MAKE USE OF THE MANUAL CONSOLIDATED ITEM TYPE LIST TO AGGREGATE SIMILAR ITEM TYPES
+    Table.all_item_types.each do |item_type|
+      tables = Table.where(item_type: ([item_type]+(Table.similar_item_type_hash[item_type] || []))).where("price is not null")
       next if tables.count == 0
+      prices = tables.map(&:price).sort
       if tables.count%2 == 1 #odd
-        median = tables.map(&:price).sort[tables.count/2] # median
+        median = prices[tables.count/2] # median
       else #even and so > 1 since it can't be 0
-        median = [tables.map(&:price).sort[tables.count/2],tables.map(&:price).sort[(tables.count+1)/2]].sum/2.0 # median
+        median = [prices[tables.count/2],prices[(tables.count+1)/2]].sum/2.0 # median
       end
-      unless tables.update_all(item_type_index: [median,median,table_item_type_hash[item_type]].sum/3.0)
+      mean = prices.sum/prices.length
+      unless tables.update_all(item_type_index: [median,median,mean].sum/3.0)
         puts t.errors.messages.inspect
       end
     end
