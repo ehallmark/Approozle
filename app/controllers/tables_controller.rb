@@ -16,14 +16,18 @@ class TablesController < ApplicationController
       table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @item_type = ""
       @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")).order(:price) if @brand_name.present?
       @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or ")).order(:price) if @item_type.present?
+      # get middle 1000 of each if they have it
+      limit = 2000
+      begin @from_brand_names = @from_brand_names.limit(limit).offset((@from_brand_names.count-limit)/2) if @from_brand_names.count > limit rescue nil end
+      begin @from_item_types = @from_item_types.limit(limit).offset((@from_item_types.count-limit)/2) if @from_item_types.count > limit rescue nil end
       @brand_name_count = (@from_brand_names || []).count
       @item_type_count = (@from_item_types || []).count
       # Average of mean AND median
       begin @brand_name_price_mean = @from_brand_names.map(&:price).sum/@brand_name_count rescue @brand_name_price_mean = "N/A" end
-      begin @brand_name_price_median = @from_brand_names[@brand_name_count/2].price rescue @brand_name_price_median = "N/A" end
+      begin (@brand_name_count%2==1) ? @brand_name_price_median = @from_brand_names[@brand_name_count/2].price : @brand_name_price_median = (@from_brand_names[@brand_name_count/2].price+@from_brand_names[@brand_name_count/2-1].price)/2.0 rescue @brand_name_price_median = "N/A" end
       begin @brand_name_price_average = [@brand_name_price_median,@brand_name_price_median,@brand_name_price_mean].sum/3.0 rescue @brand_name_price_average = "N/A" end
       begin @item_type_price_mean = @from_item_types.map(&:price).sum/@item_type_count rescue @item_type_price_mean = "N/A" end
-      begin @item_type_price_median = @from_item_types[@item_type_count/2].price rescue @item_type_price_median = "N/A" end
+      begin (@item_type_count%2==1) ? @item_type_price_median = @from_item_types[@item_type_count/2].price : @item_type_price_median = (@from_item_types[@item_type_count/2].price+@from_item_types[@item_type_count/2-1].price)/2.0 rescue @item_type_price_median = "N/A" end
       begin @item_type_price_average = [@item_type_price_median,@item_type_price_median,@item_type_price_mean].sum/3.0 rescue @item_type_price_average = "N/A" end
       # variables to standardize above variables
       begin 
@@ -86,7 +90,7 @@ class TablesController < ApplicationController
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_brand_name_average = weighted_brand_name_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_brand_name_average = "N/A" end
-      final_adjustments = [@adjusted_and_weighted_brand_name_average, @adjusted_and_weighted_item_type_average, @adjusted_and_weighted_item_type_average].keep_if{|item|
+      final_adjustments = [@adjusted_and_weighted_brand_name_average, @adjusted_and_weighted_item_type_average].keep_if{|item|
         item.present? and item != "N/A" and item > 0.1
       }
       begin @final_retail_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_retial_price = "N/A" end
@@ -176,15 +180,10 @@ class TablesController < ApplicationController
           brand = p.try(:[],"seller") if not brand.present?
           brand = p.try(:[],"manufacturer") if not brand.present?
           price = p.try(:[],"price")
-          features = p["features"] if p.has_key?("features")
-          if features.present? and not material.present?
-            features.each{|k,v| 
-              material.push(v.upcase.gsub(/[^0-9A-Z ]/i,'')) if k.downcase.include?('material') and v.present?
-            }
-          end
-          material = material.uniq.join(' ')
+          
           puts price
-          puts material
+          puts brand 
+          
           brand = brand.upcase.gsub(/[^0-9A-Z ]/i,'') if brand.present?
           name = name.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
           material = material.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
@@ -195,26 +194,8 @@ class TablesController < ApplicationController
               item_type: product_type_seed,
               name: name
             }
-            # looks to update material in case I come up with a better algorithm in the future
-            
-            identical_tables = Table.where(pHash.merge(material: material))
-            new_record_count -= identical_tables.count
-            identical_tables.destroy_all
-            less_interesting_tables = Table.where(pHash.merge(material: nil))
-            new_record_count -= less_interesting_tables.count
-            less_interesting_tables.destroy_all
-            # Destroy common materials
-            common_tables = Table.where(pHash)
-            if common_tables.exists?
-              common_tables.each do |t|
-                if material.include?(t.material)
-                  t.destroy
-                  new_record_count -= 1
-                end
-              end
-            end
-            if table = Table.create(pHash.merge(material: material))     
-              new_record_count += 1
+            if (table = Table.find_or_create_by(pHash))     
+              new_record_count += 1 if table.new_record?
             else
                puts table.errors.messages.inspect
             end
@@ -352,7 +333,7 @@ class TablesController < ApplicationController
 
   def index
     #Table.where(price: nil).destroy_all
-    all_tables = Table.order("item_type ASC NULLS LAST, brand_name ASC NULLS LAST, price DESC NULLS LAST")
+    all_tables = Table
     @filterrific = initialize_filterrific(
       all_tables,
       params[:filterrific]

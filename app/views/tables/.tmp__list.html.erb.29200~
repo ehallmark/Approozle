@@ -11,7 +11,7 @@
 		<th>Brand Index
 		<th>Item Type</th>
 		<th>Item Type Index</th>
-		<th><%= filterrific_sorting_link(@filterrific, :price)%></th>
+		<th>Price</th>
 		<th>Delete</th>
 	</tr>
 	<% tables.each_with_index do |table,index| %>

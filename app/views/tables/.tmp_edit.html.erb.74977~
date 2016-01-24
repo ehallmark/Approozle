@@ -7,6 +7,8 @@
 		  <%= f.collection_select :item_type, Table.order(:item_type).select("item_type").uniq,:item_type,:item_type, {include_blank: true}, {class: 'form-control'} %>
 		  <%= f.label :brand_name %>:
 		  <%= f.text_field :brand_name, {class: 'form-control'} %>
+		  <%= f.label :material %>:
+		  <%= f.text_field :material, {class: 'form-control'} %>
 		  <%= f.label :name %>:
 		  <%= f.text_field :name, {class: "form-control"} %> 
 		  <%= f.label :price %>:

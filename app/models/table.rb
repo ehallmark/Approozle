@@ -14,7 +14,7 @@ class Table < ActiveRecord::Base
   #accepts_nested_attributes_for :brand
   before_validation :capitalize_attributes
   validate :validate_table
-  attr_accessor :optional_search, :furniture_style, :fabric_color, :fabric_pattern, :fabric_type, :backrest_style, :finish_type, :material_of_shelves, :material_of_base, :material_of_insets, :carved_detailing, :nailhead_trimming
+  attr_accessor :optional_search, :furniture_style, :fabric_color, :fabric_pattern, :fabric_type, :backrest_style, :finish_type, :material, :material_of_shelves, :material_of_base, :material_of_insets, :carved_detailing, :nailhead_trimming
   scope :search_query, lambda {|q| where("name like upper('%#{q}%') or item_type like upper('%#{q}%') or material like upper('%#{q}%') or brand_name like upper('%#{q}%')") }
   scope :item_type, lambda {|item| where("upper(item_type) = '#{item.upcase}'") }
   scope :sorted_by, lambda { |sort_option|
@@ -28,8 +28,8 @@ class Table < ActiveRecord::Base
       order("LOWER(tables.brand_name) #{ direction } NULLS LAST")
     when /^item_type/
       order("LOWER(tables.item_type) #{ direction } NULLS LAST")
-    when /^material/
-      order("LOWER(tables.material) #{ direction } NULLS LAST")
+    when /^price/
+      order("tables.price #{ direction } NULLS LAST")
     else
       raise(ArgumentError, "Invalid sort option: #{ sort_option.inspect }")
     end
@@ -164,7 +164,8 @@ class Table < ActiveRecord::Base
     {
       "BENCH" => ["PICNIC TABLE", "BENCHES"],
       "CHINA HUTCH" => ["TACKBOARD"],
-      "BUFFET"=>["GUN"]
+      "BUFFET"=>["GUN"],
+      "DINING TABLE"=>["KIDS","COVER","CHAIRS","CHAIR"]
     }
   end
   
@@ -595,7 +596,6 @@ class Table < ActiveRecord::Base
     write_attribute(:name,self.name.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.name != self.name.upcase.gsub(/[^0-9A-Z ]/i,'').strip
     write_attribute(:item_type,self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.item_type.present? and self.item_type != self.item_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
     write_attribute(:brand_name,self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.brand_name.present? and self.brand_name != self.brand_name.upcase.gsub(/[^0-9A-Z ]/i,'').strip
-    write_attribute(:material,self.material.upcase.gsub(/[^0-9A-Z ]/i,'').strip) if self.material.present? and self.material != self.material.upcase.gsub(/[^0-9A-Z ]/i,'').strip
   end
   
   def validate_table
@@ -609,11 +609,9 @@ class Table < ActiveRecord::Base
     errors.add(:brand_name_not_capitalized, "Brand_name not capitalized") unless (self.brand_name || "")==(self.brand_name || "").upcase
     errors.add(:name_not_capitalized, "Name not capitalized") unless (self.name || "")==(self.name || "").upcase
     errors.add(:item_type_not_capitalized, "Item_type not capitalized") unless (self.item_type || "")==(self.item_type || "").upcase
-    errors.add(:material_not_capitalized, "Material not capitalized") unless (self.material || "")==(self.material || "").upcase
     #validate duplicates
     duplicate_table_ids = Table.where(
       price: self.price,
-      material: self.material,
       brand_name: self.brand_name,
       item_type: ([self.item_type]+(Table.similar_item_type_hash[self.item_type] || []))
     ).pluck(:id)

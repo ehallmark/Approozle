@@ -10,8 +10,8 @@
 		<th>Brand Name</th>
 		<th>Brand Index
 		<th>Item Type</th>
-		<th>Item Type Index</th>
-		<th><%= filterrific_sorting_link(@filterrific, :price)%></th>
+		<th>Material</th>
+		<th>Price</th>
 		<th>Delete</th>
 	</tr>
 	<% tables.each_with_index do |table,index| %>
@@ -21,7 +21,7 @@
 			<td><%= (table.brand_name || "").titleize %></td>
 			<td><%= table.brand_name_index %>
 			<td><%= (table.item_type || "").titleize %></td>
-			<td><%= table.item_type_index %>
+			<td><%= (table.material || "").titleize %></td>
 			<td><%= table.price %></td>
 			<td><%= link_to "<i class='glyphicon glyphicon-remove' style='color: red;'></i>".html_safe, tables_delete_path(id: table.id), data: {confirm: "Are you sure?"}, method: :delete %></td>
 		</tr>

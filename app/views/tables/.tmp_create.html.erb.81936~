@@ -7,6 +7,8 @@
 		  <%= f.text_field :item_type, {class: 'form-control'} %>
 		  <%= f.label :brand_name %>:
 		  <%= f.text_field :brand_name, {class: 'form-control'} %>
+		  <%= f.label :material %>:
+		  <%= f.text_field :material, {class: 'form-control'} %>
 		  <%= f.label :name %>:
 		  <%= f.text_field :name, {class: 'form-control'} %> 
 		  <%= f.label :price %>:
