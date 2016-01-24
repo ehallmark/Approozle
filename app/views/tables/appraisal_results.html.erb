@@ -16,6 +16,14 @@
 		Brand Name - Item Type Index: <%= @brand_name_boost_from_item_type %><br />
 		Brand Name - Count: <%= @brand_name_count %><br />
 		<br />	
+		Search - Mean <%= @search_price_mean %><br />
+		Search - Median <%= @search_price_median %><br />
+		Search - Price Average: <%= number_to_currency @search_price_average %><br />
+		Search - Item Type Index: <%= @search_boost_from_item_type %><br />
+		Search - Brand Name Index: <%= @search_boost_from_brand_name %><br />
+		Search - Count: <%= @search_count %><br />
+		Search Parameters: <%= @search.join("; ") %><br />
+		<br />	
 	</div>
 	<div class = "col-xs-7">
 		<h4>
@@ -23,6 +31,9 @@
 		<h4/>
 		<h4>
 			Price Estimated From Brand Name Index: <%= number_to_currency @adjusted_and_weighted_brand_name_average %><br />
+		</h4>
+		<h4>
+			Price Estimated From Search: <%= number_to_currency @adjusted_and_weighted_search_average %><br />
 		</h4>
 		<h4>
 			Retail Price Estimate: <%= number_to_currency @final_retail_price %>

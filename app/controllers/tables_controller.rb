@@ -14,14 +14,19 @@ class TablesController < ApplicationController
     if table.present?
       table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
       table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @item_type = ""
+      table.has_key?(:item_type) ? @search = table.delete_if{|k,v| [:brand_name,:item_type].include?(k.to_sym) or v=="NO" or v=="NONE" or v.blank? }.collect{|k,v| v=="YES" ? k.upcase.sub("_"," ").gsub(/[^0-9A-Z ]/i,'').strip : v.gsub(/[^0-9A-Z ]/i,'').strip}.uniq : @search = []
       @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")).order(:price) if @brand_name.present?
       @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or ")).order(:price) if @item_type.present?
+      @from_search = Table.where(@search.compact.collect{|search| "name ilike '%#{search}%'"}.join(" or ")).order(:price) if @search.present?
       # get middle 1000 of each if they have it
       limit = 2000
+      search_limit = 1000
       begin @from_brand_names = @from_brand_names.limit(limit).offset((@from_brand_names.count-limit)/2) if @from_brand_names.count > limit rescue nil end
       begin @from_item_types = @from_item_types.limit(limit).offset((@from_item_types.count-limit)/2) if @from_item_types.count > limit rescue nil end
+      begin @from_search = @from_search.limit(search_limit).offset((@from_search.count-search_limit)/2) if @from_search.count > search_limit rescue nil end
       @brand_name_count = (@from_brand_names || []).count
       @item_type_count = (@from_item_types || []).count
+      @search_count = (@from_search || []).count
       # Average of mean AND median
       begin @brand_name_price_mean = @from_brand_names.map(&:price).sum/@brand_name_count rescue @brand_name_price_mean = "N/A" end
       begin (@brand_name_count%2==1) ? @brand_name_price_median = @from_brand_names[@brand_name_count/2].price : @brand_name_price_median = (@from_brand_names[@brand_name_count/2].price+@from_brand_names[@brand_name_count/2-1].price)/2.0 rescue @brand_name_price_median = "N/A" end
@@ -29,6 +34,10 @@ class TablesController < ApplicationController
       begin @item_type_price_mean = @from_item_types.map(&:price).sum/@item_type_count rescue @item_type_price_mean = "N/A" end
       begin (@item_type_count%2==1) ? @item_type_price_median = @from_item_types[@item_type_count/2].price : @item_type_price_median = (@from_item_types[@item_type_count/2].price+@from_item_types[@item_type_count/2-1].price)/2.0 rescue @item_type_price_median = "N/A" end
       begin @item_type_price_average = [@item_type_price_median,@item_type_price_median,@item_type_price_mean].sum/3.0 rescue @item_type_price_average = "N/A" end
+      begin @search_price_mean = @from_search.map(&:price).sum/@search_count rescue @search_price_mean = "N/A" end
+      begin (@search_count%2==1) ? @search_price_median = @from_search[@search_count/2].price : @search_price_median = (@from_search[@search_count/2].price+@from_search[@search_count/2-1].price)/2.0 rescue @search_price_median = "N/A" end
+      begin @search_price_average = [@search_price_median,@search_price_median,@search_price_mean].sum/3.0 rescue @search_price_average = "N/A" end
+ 
       # variables to standardize above variables
       begin 
         raise if @brand_name_count == 0
@@ -42,8 +51,20 @@ class TablesController < ApplicationController
       rescue
         @item_type_boost_from_brand_name = "N/A"
       end
+      begin
+        raise if @search_count == 0
+        @search_boost_from_brand_name = @from_search.map(&:brand_name_index).sum.to_f/@search_count.to_f 
+      rescue
+        @search_boost_from_brand_name = "N/A"
+      end
+      begin
+        raise if @search_count == 0
+        @search_boost_from_item_type = @from_search.map(&:item_type_index).sum.to_f/@search_count.to_f 
+      rescue
+        @search_boost_from_item_type = "N/A"
+      end
       # readjust variables to account for weakness of material attribute completeness
-      @total_count = @brand_name_count+@item_type_count
+      @total_count = @brand_name_count+@item_type_count+@search_count
       # get weighted variables
       begin 
         raise if @brand_name_count == 0 or @item_type_count == 0
@@ -58,6 +79,18 @@ class TablesController < ApplicationController
         @brand_name_adjusted_for_item_type = "N/A" 
       end
       begin 
+        raise if @brand_name_count == 0 or @search_count == 0 
+        @search_adjusted_for_brand_name = @search_price_average*@search_boost_from_brand_name/@brand_name_price_average
+      rescue 
+        @search_adjusted_for_brand_name = "N/A" 
+      end
+      begin 
+        raise if @item_type_count == 0 or @search_count == 0
+        @search_adjusted_for_item_type = @search_price_average*@search_boost_from_item_type/@item_type_price_average
+      rescue 
+        @search_adjusted_for_item_type = "N/A" 
+      end
+      begin 
         raise if @item_type_count == 0 or @brand_name_count == 0
         @item_type_weighted_by_brand_name = @item_type_adjusted_for_brand_name*@brand_name_count 
       rescue 
@@ -68,6 +101,18 @@ class TablesController < ApplicationController
         @item_type_weighted = @item_type_price_average*@item_type_count 
       rescue 
         @item_type_weighted = "N/A" 
+      end
+      begin 
+        raise if @search_count == 0 or @brand_name_count == 0
+        @search_weighted_by_brand_name = @search_adjusted_for_brand_name*@brand_name_count 
+      rescue 
+        @search_weighted_by_brand_name = "N/A" 
+      end
+      begin 
+        raise if @search_count == 0 or @item_type_count == 0
+        @search_weighted_by_item_type = @search_adjusted_for_item_type*@item_type_count 
+      rescue 
+        @search_weighted_by_item_type = "N/A" 
       end
       begin 
         raise if @brand_name_count == 0 or @item_type_count == 0
@@ -85,15 +130,19 @@ class TablesController < ApplicationController
       weighted_item_type_adjustments = [@item_type_weighted_by_brand_name, @item_type_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
-      begin @adjusted_and_weighted_item_type_average = weighted_item_type_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_item_type_average = "N/A" end
+      begin @adjusted_and_weighted_item_type_average = weighted_item_type_adjustments.sum.to_f/(@total_count-@search_count) rescue @adjusted_and_weighted_item_type_average = "N/A" end
       weighted_brand_name_adjustments = [@brand_name_weighted_by_item_type, @brand_name_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
-      begin @adjusted_and_weighted_brand_name_average = weighted_brand_name_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_brand_name_average = "N/A" end
-      final_adjustments = [@adjusted_and_weighted_brand_name_average, @adjusted_and_weighted_item_type_average].keep_if{|item|
+      begin @adjusted_and_weighted_brand_name_average = weighted_brand_name_adjustments.sum.to_f/(@total_count-@search_count) rescue @adjusted_and_weighted_brand_name_average = "N/A" end
+      weighted_search_adjustments = [@search_weighted_by_brand_name, @search_weighted_by_item_type].keep_if{|item|
+        item.present? and item != "N/A"
+      }
+      begin @adjusted_and_weighted_search_average = weighted_search_adjustments.sum.to_f/(@total_count-@search_count) rescue @adjusted_and_weighted_search_average = "N/A" end
+      final_adjustments = [@adjusted_and_weighted_search_average,@adjusted_and_weighted_brand_name_average,@adjusted_and_weighted_brand_name_average,@adjusted_and_weighted_item_type_average,@adjusted_and_weighted_item_type_average,@adjusted_and_weighted_item_type_average].keep_if{|item|
         item.present? and item != "N/A" and item > 0.1
       }
-      begin @final_retail_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_retial_price = "N/A" end
+      begin @final_retail_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_retail_price = "N/A" end
       #begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.4)].max rescue @used_price_factor = "N/A" end
       begin
         @used_price_factor = 0.4 
