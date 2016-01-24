@@ -14,27 +14,27 @@ class TablesController < ApplicationController
     if table.present?
       table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
       table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @item_type = ""
-      @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")) if @brand_name.present?
-      @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}' or name ilike '%#{item_type}%'"}.join(" or ")) if @item_type.present?
+      @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")).order(:price) if @brand_name.present?
+      @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or ")).order(:price) if @item_type.present?
       @brand_name_count = (@from_brand_names || []).count
       @item_type_count = (@from_item_types || []).count
       # Average of mean AND median
-      begin @brand_name_price_mean = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_mean = "N/A" end
-      begin @brand_name_price_median = @from_brand_names.order(:price)[@brand_name_count/2].price rescue @brand_name_price_median = "N/A" end
+      begin @brand_name_price_mean = @from_brand_names.map(&:price).sum/@brand_name_count rescue @brand_name_price_mean = "N/A" end
+      begin @brand_name_price_median = @from_brand_names[@brand_name_count/2].price rescue @brand_name_price_median = "N/A" end
       begin @brand_name_price_average = [@brand_name_price_median,@brand_name_price_median,@brand_name_price_mean].sum/3.0 rescue @brand_name_price_average = "N/A" end
-      begin @item_type_price_mean = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_mean = "N/A" end
-      begin @item_type_price_median = @from_item_types.order(:price)[@item_type_count/2].price rescue @item_type_price_median = "N/A" end
+      begin @item_type_price_mean = @from_item_types.map(&:price).sum/@item_type_count rescue @item_type_price_mean = "N/A" end
+      begin @item_type_price_median = @from_item_types[@item_type_count/2].price rescue @item_type_price_median = "N/A" end
       begin @item_type_price_average = [@item_type_price_median,@item_type_price_median,@item_type_price_mean].sum/3.0 rescue @item_type_price_average = "N/A" end
       # variables to standardize above variables
       begin 
         raise if @brand_name_count == 0
-        @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f 
+        @brand_name_boost_from_item_type = @from_brand_names.map(&:item_type_index).sum.to_f/@brand_name_count.to_f 
       rescue
         @brand_name_boost_from_item_type = "N/A"
       end
       begin
         raise if @item_type_count == 0
-        @item_type_boost_from_brand_name = @from_item_types.pluck(:brand_name_index).sum.to_f/@item_type_count.to_f 
+        @item_type_boost_from_brand_name = @from_item_types.map(&:brand_name_index).sum.to_f/@item_type_count.to_f 
       rescue
         @item_type_boost_from_brand_name = "N/A"
       end
@@ -78,11 +78,11 @@ class TablesController < ApplicationController
         @brand_name_weighted = "N/A" 
       end
       # get final results
-      weighted_item_type_adjustments = [@item_type_weighted_by_brand_name, @item_type_weighted, @item_type_weighted].keep_if{|item|
+      weighted_item_type_adjustments = [@item_type_weighted_by_brand_name, @item_type_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_item_type_average = weighted_item_type_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_item_type_average = "N/A" end
-      weighted_brand_name_adjustments = [@brand_name_weighted_by_item_type, @brand_name_weighted, @brand_name_weighted].keep_if{|item|
+      weighted_brand_name_adjustments = [@brand_name_weighted_by_item_type, @brand_name_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_brand_name_average = weighted_brand_name_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_brand_name_average = "N/A" end
