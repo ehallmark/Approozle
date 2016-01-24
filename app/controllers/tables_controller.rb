@@ -173,7 +173,21 @@ class TablesController < ApplicationController
         item.present? and item != "N/A" and item > 0.1
       }
       begin @final_retail_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_retial_price = "N/A" end
-      begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.4)].max rescue @used_price_factor = "N/A" end
+      #begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.4)].max rescue @used_price_factor = "N/A" end
+      begin
+        @used_price_factor = 0.4 
+        (params[:options] || {}).each do |option,value|
+          if Table.all_options.has_key?(option)
+            @used_price_factor -= (Table.all_options[option][value] || 0)
+          end
+        end
+        @used_price_factor -= (Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0)
+        @used_price_factor -= (Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0)
+        @used_price_factor = [@used_price_factor,0.8].min
+        @used_price_factor = [@used_price_factor,0.3].max
+      rescue
+        @used_price_factor = 0.4
+      end
       begin @final_used_price = @final_retail_price.to_f * (1.0-@used_price_factor).to_f rescue @final_used_price = "N/A" end
     end
     
@@ -201,7 +215,8 @@ class TablesController < ApplicationController
     # Build the request
     new_record_count = 0
     product_type_seed = params[:product_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip
-    ([product_type_seed]+(Table.similar_item_type_hash[product_type_seed] || [])).compact.uniq.each do |product_type|
+    ([product_type_seed]+((Table.similar_item_type_hash[product_type_seed] || [])-Table.all_item_types)).each do |product_type|
+      puts "SEEDING #{product_type}"
       # we only want single items so skip anything with 'SET' in it
       sem3.products_field( "search", "Furniture" )
       sem3.products_field( "name", "include" , product_type )
