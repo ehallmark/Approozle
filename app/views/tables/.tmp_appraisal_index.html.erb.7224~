@@ -3,14 +3,15 @@
 	<div class = "col-xs-5">
 		<%= link_to "Back to Furniture Page", tables_path %>
 		<%= form_for Table.new, url: tables_appraisal_path, method: :post do |f| %>
-		  <%= f.label :item_type, "Available Item Types" %>:
+		  <%= f.label :item_type %>:
 		  <%= f.collection_select :item_type, Table.order(:item_type).select("item_type").uniq,:item_type,:item_type, {include_blank: true}, {class: 'form-control'} %>
+		  <%= f.label :brand_name %>:
+		  <%= f.select :brand_name, Table.all_brand_names, {include_blank: true}, {class: 'form-control'} %>
+		  <%= f.label :material %>:
+		  <%= f.text_field :material, {class: 'form-control'} %>
+		  <%= f.label :optional_search %>:
+		  <%= f.text_field :optional_search, {class: "form-control"} %>
 		  <br />  
-		  <% Table.all_options.each do |k,v| %>
-		  	<%= f.label k %>
-		  	<%= f.select k, v.keys(), {include_blank: true}, {class: 'form-control'} %>
-		  <% end %>
-		  <br />
 		  <%= f.submit "Get Appraisal", class: "btn btn-primary" %>
 		<% end %>		
 	</div>

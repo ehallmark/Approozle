@@ -14,7 +14,7 @@ class Table < ActiveRecord::Base
   #accepts_nested_attributes_for :brand
   before_validation :capitalize_attributes
   validate :validate_table
-  attr_accessor :optional_search 
+  attr_accessor :optional_search, :furniture_style, :fabric_color, :fabric_pattern, :fabric_type, :backrest_style, :finish_type, :material_of_shelves, :material_of_base, :material_of_insets, :carved_detailing, :nailhead_trimming
   scope :search_query, lambda {|q| where("name like upper('%#{q}%') or item_type like upper('%#{q}%') or material like upper('%#{q}%') or brand_name like upper('%#{q}%')") }
   scope :item_type, lambda {|item| where("upper(item_type) = '#{item.upcase}'") }
   scope :sorted_by, lambda { |sort_option|
@@ -134,7 +134,6 @@ class Table < ActiveRecord::Base
       "COFFEE TABLE"=>["COCKTAIL TABLE","LIVING ROOM TABLE","SOFA TABLE"],
       "END TABLE"=>["COUCH SIDE TABLE","LIVING ROOM TABLE"],
       "SOFA TABLE"=>["COUCH TABLE","LIVING ROOM TABLE"],
-      "SOFA TABLE"=>["COUCH TABLE","LIVING ROOM TABLE"],
       "OCCASIONAL TABLE"=>["FORMAL TABLE","GUEST TABLE"],
       "TV STAND"=>["TELEVISION STAND","TV CONSOLE","ENTERTAINMENT CENTER"],
       "TV CONSOLE"=>["TELEVISION CONSOLE","TV STAND","ENTERTAINMENT CENTER","AUDIO CENTER","AUDIOVISUAL CENTER"],
@@ -150,16 +149,6 @@ class Table < ActiveRecord::Base
       "COMPUTER ARMOIRE"=>["COMPUTER CABINET"],
       "CREDENZA"=>["OFFICE WORKSPACE","OFFICE BOOKCASE","STORAGE CABINET","CABINET"],
       "BOOKCASE"=>["BOOKSHELF","SHELF UNIT","DISPLAY CABINET"]    
-    }
-  end
-  
-  def self.similar_search_options_hash
-    {
-    }
-  end
-  
-  def self.similar_material_hash
-    {
     }
   end
   
@@ -567,8 +556,9 @@ class Table < ActiveRecord::Base
     }
   end
   
-  def all_options
-    {
+  def self.all_options
+    { "item_type": Table.used_item_type_hash,
+      "brand_name": Table.used_brand_name_hash,
       "furniture_style": Table.used_furniture_style_hash,
       "fabric_color": Table.used_fabric_color_hash,
       "fabric_pattern": Table.used_fabric_pattern_hash,

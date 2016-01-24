@@ -1,0 +1,31 @@
+<h2>Furniture Analysis</h2>
+<%= link_to "Back to Furniture Page", tables_path %>
+<div class = "row">
+	<div class = "col-xs-12">
+		<h3>Item Type Index</h3>
+		<table class='table table-bordered table-condensed table-striped'>
+			<thead>
+				<tr>
+					<th>Item Type</th>
+					<th>Total Record Count</th>
+					<th>Average Price</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% @item_type_price_averages.each do |t| %>
+					<tr>
+						<td><%= t.item_type.titleize %></td>
+						<td><%= t.total_count %></td>
+						<td><%= t.item_type_index %></td>
+					</tr>
+				<% end %>
+				<tr>
+					<th>Total</th>
+					<th><%= @total_count %></th>
+					<% averages = @item_type_price_averages.collect{|t| t.item_type_index}.compact %>
+					<th><%= (averages.length > 0) ? averages.sum/averages.length : "N/A" %></th>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

@@ -10,19 +10,14 @@ class TablesController < ApplicationController
   
   def appraisal_results
     table = params[:table]
+    @error = false
     if table.present?
       table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
       table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @item_type = ""
-      table.has_key?(:material) ? @material = table[:material].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @material = ""
-      table.has_key?(:optional_search) ? @name = table[:optional_search].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @name = ""
       @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")) if @brand_name.present?
       @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}' or name ilike '%#{item_type}%'"}.join(" or ")) if @item_type.present?
-      @from_materials = Table.where(([@material]+(Table.similar_material_hash[@material] || [])).compact.collect{|material| "material ilike '%#{material}%' or name ilike '%#{material}%'"}.join(" or ")) if @material.present?
-      @from_names = Table.where(:id => @name.split(" ").collect{|name| ([name]+(Table.similar_search_options_hash[name] || [])) }.inject(:+).compact.uniq.collect{|n| Table.search_query(n).map(&:id) }.inject(:+).uniq ) if @name.present?
       @brand_name_count = (@from_brand_names || []).count
       @item_type_count = (@from_item_types || []).count
-      @material_count = (@from_materials || []).count
-      @name_count = (@from_names || []).count
       # Average of mean AND median
       begin @brand_name_price_mean = @from_brand_names.pluck(:price).sum/@brand_name_count rescue @brand_name_price_mean = "N/A" end
       begin @brand_name_price_median = @from_brand_names.order(:price)[@brand_name_count/2].price rescue @brand_name_price_median = "N/A" end
@@ -30,19 +25,7 @@ class TablesController < ApplicationController
       begin @item_type_price_mean = @from_item_types.pluck(:price).sum/@item_type_count rescue @item_type_price_mean = "N/A" end
       begin @item_type_price_median = @from_item_types.order(:price)[@item_type_count/2].price rescue @item_type_price_median = "N/A" end
       begin @item_type_price_average = [@item_type_price_median,@item_type_price_median,@item_type_price_mean].sum/3.0 rescue @item_type_price_average = "N/A" end
-      begin @material_price_mean = @from_materials.pluck(:price).sum/@material_count rescue @material_price_mean = "N/A" end
-      begin @material_price_median = @from_materials.order(:price)[@material_count/2].price rescue @material_price_median = "N/A" end
-      begin @material_price_average = [@material_price_median,@material_price_median,@material_price_mean].sum/3.0 rescue @material_price_average = "N/A" end
-      begin @name_price_mean = @from_names.pluck(:price).sum/@name_count rescue @name_price_mean = "N/A" end
-      begin @name_price_median = @from_names.order(:price)[@name_count/2].price rescue @name_price_median = "N/A" end
-      begin @name_price_average = [@name_price_median,@name_price_median,@name_price_mean].sum/3.0 rescue @name_price_average = "N/A" end
       # variables to standardize above variables
-      begin 
-        raise if @material_count == 0
-        @material_boost_from_item_type = @from_materials.pluck(:item_type_index).sum.to_f/@material_count.to_f 
-      rescue 
-        @material_boost_from_item_type = "N/A" 
-      end
       begin 
         raise if @brand_name_count == 0
         @brand_name_boost_from_item_type = @from_brand_names.pluck(:item_type_index).sum.to_f/@brand_name_count.to_f 
@@ -50,31 +33,13 @@ class TablesController < ApplicationController
         @brand_name_boost_from_item_type = "N/A"
       end
       begin
-        raise if @name_count == 0
-        @name_boost_from_item_type = @from_names.pluck(:item_type_index).sum.to_f/@name_count.to_f
-      rescue 
-        @name_boost_from_item_type = "N/A" 
-      end
-      begin
-        raise if @material_count == 0
-        @material_boost_from_brand_name = @from_materials.pluck(:brand_name_index).sum.to_f/@material_count.to_f
-      rescue
-        @material_boost_from_brand_name = "N/A" 
-      end
-      begin
         raise if @item_type_count == 0
         @item_type_boost_from_brand_name = @from_item_types.pluck(:brand_name_index).sum.to_f/@item_type_count.to_f 
       rescue
         @item_type_boost_from_brand_name = "N/A"
       end
-      begin 
-        raise if @name_count == 0
-        @name_boost_from_brand_name = @from_names.pluck(:brand_name_index).sum.to_f/@name_count.to_f
-      rescue
-        @name_boost_from_brand_name = "N/A"
-      end
       # readjust variables to account for weakness of material attribute completeness
-      @total_count = @brand_name_count+@item_type_count+@material_count+@name_count
+      @total_count = @brand_name_count+@item_type_count
       # get weighted variables
       begin 
         raise if @brand_name_count == 0 or @item_type_count == 0
@@ -83,52 +48,16 @@ class TablesController < ApplicationController
         @item_type_adjusted_for_brand_name = "N/A" 
       end
       begin 
-        raise if @item_type_count == 0 or @material_count == 0
-        @item_type_adjusted_for_material = @item_type_price_average*@material_price_average/@material_boost_from_item_type
-      rescue 
-        @item_type_adjusted_for_material = "N/A"
-      end
-      begin 
-        raise if @item_type_count == 0 or @name_count == 0
-        @item_type_adjusted_for_name = @item_type_price_average*@name_price_average/@name_boost_from_item_type
-      rescue
-        @item_type_adjusted_for_name = "N/A" 
-      end
-      begin 
         raise if @brand_name_count == 0 or @item_type_count == 0
         @brand_name_adjusted_for_item_type = @brand_name_price_average*@item_type_price_average/@item_type_boost_from_brand_name 
       rescue 
         @brand_name_adjusted_for_item_type = "N/A" 
       end
       begin 
-        raise if @brand_name_count == 0 or @material_count == 0
-        @brand_name_adjusted_for_material = @brand_name_price_average*@material_price_average/@material_boost_from_brand_name 
-      rescue 
-        @brand_name_adjusted_for_material = "N/A" 
-      end
-      begin 
-        raise if @brand_name_count == 0 or @name_count == 0
-        @brand_name_adjusted_for_name = @brand_name_price_average*@name_price_average/@name_boost_from_brand_name 
-      rescue 
-        @brand_name_adjusted_for_name = "N/A" 
-      end
-      begin 
         raise if @item_type_count == 0 or @brand_name_count == 0
         @item_type_weighted_by_brand_name = @item_type_adjusted_for_brand_name*@brand_name_count 
       rescue 
         @item_type_weighted_by_brand_name = "N/A" 
-      end
-      begin 
-        raise if @item_type_count == 0 or @material_count == 0
-        @item_type_weighted_by_material = @item_type_adjusted_for_material*@material_count
-      rescue 
-        @item_type_weighted_by_material = "N/A" 
-      end
-      begin
-        raise if @item_type_count == 0 or @name_count == 0
-        @item_type_weighted_by_name = @item_type_adjusted_for_name*@name_count 
-      rescue
-        @item_type_weighted_by_name = "N/A"
       end
       begin 
         raise if @item_type_count == 0
@@ -142,18 +71,6 @@ class TablesController < ApplicationController
       rescue 
         @brand_name_weighted_by_item_type = "N/A" 
       end
-      begin
-        raise if @brand_name_count == 0 or @material_count == 0
-        @brand_name_weighted_by_material = @brand_name_adjusted_for_material*@material_count
-      rescue 
-        @brand_name_weighted_by_material = "N/A"
-      end
-      begin 
-        raise if @brand_name_count == 0 or @name_count == 0
-        @brand_name_weighted_by_name = @brand_name_adjusted_for_name*@name_count 
-      rescue
-        @brand_name_weighted_by_name = "N/A"
-      end
       begin 
         raise if @brand_name_count == 0
         @brand_name_weighted = @brand_name_price_average*@brand_name_count 
@@ -161,11 +78,11 @@ class TablesController < ApplicationController
         @brand_name_weighted = "N/A" 
       end
       # get final results
-      weighted_item_type_adjustments = [@item_type_weighted_by_brand_name, @item_type_weighted_by_material, @item_type_weighted_by_name, @item_type_weighted].keep_if{|item|
+      weighted_item_type_adjustments = [@item_type_weighted_by_brand_name, @item_type_weighted, @item_type_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_item_type_average = weighted_item_type_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_item_type_average = "N/A" end
-      weighted_brand_name_adjustments = [@brand_name_weighted_by_item_type, @brand_name_weighted_by_material, @brand_name_weighted_by_name, @brand_name_weighted].keep_if{|item|
+      weighted_brand_name_adjustments = [@brand_name_weighted_by_item_type, @brand_name_weighted, @brand_name_weighted].keep_if{|item|
         item.present? and item != "N/A"
       }
       begin @adjusted_and_weighted_brand_name_average = weighted_brand_name_adjustments.sum.to_f/@total_count rescue @adjusted_and_weighted_brand_name_average = "N/A" end
@@ -176,8 +93,10 @@ class TablesController < ApplicationController
       #begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.4)].max rescue @used_price_factor = "N/A" end
       begin
         @used_price_factor = 0.4 
-        (params[:options] || {}).each do |option,value|
-          if Table.all_options.has_key?(option)
+        (params[:table] || {}).each do |option,value|
+          option = option.to_sym
+          if Table.all_options.keys().include?(option) and value.present? and not [:brand_name, :item_type].include?(option)
+            value = value.to_sym
             @used_price_factor -= (Table.all_options[option][value] || 0)
           end
         end
@@ -187,6 +106,7 @@ class TablesController < ApplicationController
         @used_price_factor = [@used_price_factor,0.3].max
       rescue
         @used_price_factor = 0.4
+        @error = true
       end
       begin @final_used_price = @final_retail_price.to_f * (1.0-@used_price_factor).to_f rescue @final_used_price = "N/A" end
     end
