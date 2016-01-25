@@ -6,11 +6,11 @@
   <table class='table table-bordered table-striped'>
 	<tr>
 		<td></td>
-		<th>Item Name</th>
-		<th>Brand Name</th>
-		<th>Brand Index
-		<th>Item Type</th>
-		<th>Item Type Index</th>
+		<th><%= filterrific_sorting_link(@filterrific, :name)%></th>
+		<th><%= filterrific_sorting_link(@filterrific, :brand_name)%></th>
+		<th><%= filterrific_sorting_link(@filterrific, :brand_name_index)%></th>
+		<th><%= filterrific_sorting_link(@filterrific, :item_type)%></th>
+		<th><%= filterrific_sorting_link(@filterrific, :item_type_index)%></th>
 		<th><%= filterrific_sorting_link(@filterrific, :price)%></th>
 		<th>Delete</th>
 	</tr>

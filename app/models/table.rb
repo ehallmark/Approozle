@@ -23,7 +23,9 @@ class Table < ActiveRecord::Base
     when /^name/
       order("LOWER(tables.name) #{ direction } NULLS LAST")
     when /^brand_name_index/
-      order("LOWER(tables.brand_name_index) #{ direction } NULLS LAST")
+      order("tables.brand_name_index #{ direction } NULLS LAST")
+    when /^item_type_index/
+      order("tables.item_type_index #{ direction } NULLS LAST")
     when /^brand_name/
       order("LOWER(tables.brand_name) #{ direction } NULLS LAST")
     when /^item_type/
