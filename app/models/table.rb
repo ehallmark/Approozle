@@ -14,7 +14,7 @@ class Table < ActiveRecord::Base
   #accepts_nested_attributes_for :brand
   before_validation :capitalize_attributes
   validate :validate_table
-  attr_accessor :optional_search, :furniture_style, :fabric_color, :fabric_pattern, :fabric_type, :backrest_style, :finish_type, :material, :material_of_shelves, :material_of_base, :material_of_insets, :carved_detailing, :nailhead_trimming
+  attr_accessor :optional_search, :seat_or_cushion, :furniture_style, :fabric_color, :fabric_pattern, :fabric_type, :backrest_style, :finish_type, :material, :material_of_shelves, :material_of_base, :material_of_insets, :carved_detailing, :nailhead_trimming
   scope :search_query, lambda {|q| where("name like upper('%#{q}%') or item_type like upper('%#{q}%') or material like upper('%#{q}%') or brand_name like upper('%#{q}%')") }
   scope :item_type, lambda {|item| where("upper(item_type) = '#{item.upcase}'") }
   scope :sorted_by, lambda { |sort_option|
@@ -345,7 +345,12 @@ class Table < ActiveRecord::Base
       "CABINET"=>0.0,
       "COMPUTER ARMOIRE"=>-0.2,
       "CREDENZA"=>-0.1,
-      "BOOKCASE"=>0.0,
+      "BOOKCASE"=>0.0
+    }
+  end
+  
+  def self.used_patio_item_type_hash 
+    {
       "PATIO TABLE"=>-0.00,
       "PICNIC TABLE"=>-0.05,
       "PATIO CHAIR"=>-0.00,
@@ -359,7 +364,8 @@ class Table < ActiveRecord::Base
       "PATIO COFFEE TABLE"=>-0.00,
       "PATIO END TABLE"=>-0.00,
       "DECK BOX"=>-0.05,
-      "GAZEBO"=>-0.05
+      "GAZEBO"=>-0.05,
+      "PATIO CART"=>-0.05
     }
   end
   
@@ -394,6 +400,112 @@ class Table < ActiveRecord::Base
       "WICKER": -0.05,
       "CONCRETE": -0.1,
       "SLATE": -0.05 
+    }
+  end
+  
+  def self.used_patio_material_hash 
+    {
+      "PLASTIC"=>-0.05,
+      "FAUX MARBLE"=>-0.05,
+      "FAUX STONE"=>-0.05,
+      "GLASS"=>-0.00,
+      "PLYWOOD"=>-0.05,
+      "MAPLE"=>-0.05,
+      "PINE"=>-0.05,
+      "OAK"=>-0.05,
+      "PLASTIC"=>-0.05,
+      "FAUX MARBLE"=>-0.05,
+      "FAUX STONE"=>-0.05,
+      "GLASS"=>-0.00,
+      "PLYWOOD"=>-0.05,
+      "MAPLE"=>-0.05,
+      "PINE"=>-0.05,
+      "OAK"=>-0.05,
+      "CEDAR"=>-0.05,
+      "MISSION OAK"=>-0.05,
+      "QUARTER SAWN OAK"=>0.05,
+      "ASH"=>-0.05,
+      "BURL"=>0.05,
+      "EBONY"=>0.05,
+      "CHERRY"=>0.05,
+      "MAHOGANY"=>0.05,
+      "ROSEWOOD"=>0.05,
+      "TEAK"=>-0.00,
+      "WALNUT"=>0.05,
+      "SCROLLED IRON"=>-0.00,
+      "BAMBOO"=>0.05,
+      "MARBLE"=>0.05,
+      "STONE"=>0.05,
+      "RATTAN"=>0.05,
+      "WICKER"=>-0.05,
+      "CONCRETE"=>-0.10,
+      "SLATE"=>-0.05,
+      "ROPE"=>-0.00,
+      "UPHOLSTERY"=>-0.00
+    }
+  end
+  
+  def self.used_patio_material_of_base_hash
+    {
+      "PLYWOOD"=>-0.00,
+      "SOLID WOOD"=>0.05,
+      "SCROLLED IRON"=>-0.00,
+      "PLASTIC"=>-0.05,
+      "STONE"=>0.05,
+      "FAUX STONE"=>-0.00,
+      "FAUX MARBLE"=>-0.00,
+      "CONCRETE"=>-0.10,
+      "RATTAN"=>0.05,
+      "BAMBOO"=>0.05,
+      "WICKER"=>-0.05
+    }
+  end
+  
+  def self.used_patio_fabric_pattern_hash
+    { 
+      "SOLID"=>-0.00,
+      "STRIPE"=>-0.00,
+      "CHECKERED"=>-0.00,
+      "ZIG ZAG"=>-0.00,
+      "FLORAL"=>-0.05,
+      "CIRCLES"=>-0.00,
+      "PLAID"=>-0.05,
+      "ABSTRACT"=>-0.05,
+      "PRINT"=>-0.05,
+      "DIAMOND"=>-0.05,
+      "TAPESTRY"=>-0.05,
+      "ALLIGATOR"=>-0.05,
+      "LEOPARD"=>-0.05,
+      "TIGER"=>-0.05,
+      "POLKA DOT"=>-0.00,
+      "NO FABRIC"=>-0.00
+    }
+  end
+  
+  def self.used_patio_fabric_color_hash
+    {
+      "ALL BROWNS"=>-0.00,
+      "ALL TANS"=>-0.00,
+      "ALL BEIGES"=>-0.00,
+      "ALL BLACKS"=>-0.05,
+      "ALL GRAYS"=>-0.05,
+      "GOLD"=>-0.05,
+      "SILVER"=>-0.05,
+      "WHITE"=>-0.05,
+      "CREAM"=>-0.05,
+      "BRIGHT"=>-0.05,
+      "PASTEL"=>-0.00,
+      "FADED"=>-0.00,
+      "DARK"=>-0.00,
+      "BABY"=>-0.05,
+      "NO FABRIC"=>-0.00
+    }
+  end
+  
+  def self.used_patio_seat_or_cushion_hash
+    {
+      "YES": 0.05,
+      "NO": -0.05
     }
   end
   
@@ -576,30 +688,62 @@ class Table < ActiveRecord::Base
     }
   end
   
-  def self.all_options
-    { "item_type": Table.used_item_type_hash,
-      "brand_name": Table.used_brand_name_hash,
-      "furniture_style": Table.used_furniture_style_hash,
-      "fabric_color": Table.used_fabric_color_hash,
-      "fabric_pattern": Table.used_fabric_pattern_hash,
-      "fabric_type": Table.used_fabric_type_hash,
-      "backrest_style": Table.used_backrest_style_hash,
-      "finish_type": Table.used_finish_type_hash,
-      "material_of_shelves": Table.used_material_of_shelves_hash,
-      "material_of_base": Table.used_material_of_base_hash,
-      "material_of_insets": Table.used_material_of_insets_hash,
-      "material": Table.used_material_hash,  
-      "carved_detailing": Table.used_carved_detailing_hash,
-      "nailhead_trimming": Table.used_nailhead_trimming_hash
-    }
+  def self.all_options(is_patio = false)
+    if is_patio
+      {
+        "item_type": Table.used_patio_item_type_hash,
+        "brand_name": Table.used_brand_name_hash,
+        "fabric_color": Table.used_patio_fabric_color_hash,
+        "fabric_pattern": Table.used_patio_fabric_pattern_hash,
+        "fabric_type": Table.used_fabric_type_hash,
+        "finish_type": Table.used_finish_type_hash,
+        "material_of_base": Table.used_patio_material_of_base_hash,
+        "material_of_insets": Table.used_material_of_insets_hash,
+        "material": Table.used_patio_material_hash,  
+        "seat_or_cushion": Table.used_patio_seat_or_cushion_hash
+      }
+    else
+      { 
+        "item_type": Table.used_item_type_hash,
+        "brand_name": Table.used_brand_name_hash,
+        "furniture_style": Table.used_furniture_style_hash,
+        "fabric_color": Table.used_fabric_color_hash,
+        "fabric_pattern": Table.used_fabric_pattern_hash,
+        "fabric_type": Table.used_fabric_type_hash,
+        "backrest_style": Table.used_backrest_style_hash,
+        "finish_type": Table.used_finish_type_hash,
+        "material_of_shelves": Table.used_material_of_shelves_hash,
+        "material_of_base": Table.used_material_of_base_hash,
+        "material_of_insets": Table.used_material_of_insets_hash,
+        "material": Table.used_material_hash,  
+        "carved_detailing": Table.used_carved_detailing_hash,
+        "nailhead_trimming": Table.used_nailhead_trimming_hash
+      }
+    end
   end
   
   def self.all_materials
+    (patio_materials+materials).uniq.sort
+  end
+  
+  def self.patio_materials
+    Table.used_patio_material_hash.keys.sort
+  end
+  
+  def self.materials
     Table.used_material_hash.keys.sort
   end
   
   def self.all_item_types
+    (item_types + patio_item_types).sort
+  end
+  
+  def self.item_types
     Table.used_item_type_hash.keys.sort
+  end
+  
+  def self.patio_item_types
+    Table.used_patio_item_type_hash.keys.sort
   end
   
   def self.all_non_standard_item_types

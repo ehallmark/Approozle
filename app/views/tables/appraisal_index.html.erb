@@ -1,9 +1,21 @@
-<h2>New Furniture Appraisal</h2>
 <div class = "row">
 	<div class = "col-xs-5">
+		<h2>New Furniture Appraisal</h2>
 		<%= link_to "Back to Furniture Page", tables_path %>
 		<%= form_for Table.new, url: tables_appraisal_path, method: :post do |f| %>
-		  <% Table.all_options.each do |k,v| %>
+		  <% Table.all_options(false).each do |k,v| %>
+		  	<%= f.label k %>
+		  	<%= f.select k, v.keys(), {include_blank: true}, {class: 'form-control'} %>
+		  <% end %>
+		  <br />
+		  <%= f.submit "Get Appraisal", class: "btn btn-primary" %>
+		<% end %>		
+	</div>
+	<div class = "col-xs-5 col-xs-offset-1">
+	  <h2>New Patio Furniture Appraisal</h2>
+		<%= link_to "Back to Furniture Page", tables_path %>
+		<%= form_for Table.new, url: tables_appraisal_path, method: :post do |f| %>
+		  <% Table.all_options(true).each do |k,v| %>
 		  	<%= f.label k %>
 		  	<%= f.select k, v.keys(), {include_blank: true}, {class: 'form-control'} %>
 		  <% end %>
@@ -12,4 +24,5 @@
 		<% end %>		
 	</div>
 </div>
+
 

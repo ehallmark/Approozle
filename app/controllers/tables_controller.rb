@@ -14,7 +14,7 @@ class TablesController < ApplicationController
     if table.present?
       table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
       table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @item_type = ""
-      table.has_key?(:item_type) ? @search = table.delete_if{|k,v| [:brand_name,:item_type].include?(k.to_sym) or v=="NO" or v=="NONE" or v.blank? }.collect{|k,v| v=="YES" ? k.upcase.sub("_"," ").gsub(/[^0-9A-Z ]/i,'').strip : v.gsub(/[^0-9A-Z ]/i,'').strip}.uniq : @search = []
+      table.has_key?(:item_type) ? @search = table.delete_if{|k,v| [:brand_name,:item_type].include?(k.to_sym) or v=="NO" or v=="NONE" or v.blank? }.collect{|k,v| v=="YES" ? k.upcase.gsub("_"," ").gsub(/[^0-9A-Z ]/i,'').strip.split(" OR ") : v.gsub(/[^0-9A-Z ]/i,'').strip}.flatten.uniq : @search = []
       @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")).order(:price) if @brand_name.present?
       @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or ")).order(:price) if @item_type.present?
       @from_search = Table.where(@search.compact.collect{|search| "name ilike '%#{search}%'"}.join(" or ")).order(:price) if @search.present?
@@ -151,13 +151,15 @@ class TablesController < ApplicationController
       }
       begin @final_retail_price = final_adjustments.sum.to_f/final_adjustments.length rescue @final_retail_price = "N/A" end
       #begin @used_price_factor = [(Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0.7),(Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0.4)].max rescue @used_price_factor = "N/A" end
+      @is_patio = false
+      begin @item_type.present? ? @is_patio = Table.patio_item_types.include?(@item_type) : @is_patio = false rescue @is_patio = false end
       begin
         @used_price_factor = 0.4 
         (params[:table] || {}).each do |option,value|
           option = option.to_sym
-          if Table.all_options.keys().include?(option) and value.present? and not [:brand_name, :item_type].include?(option)
+          if Table.all_options(@is_patio).keys().include?(option) and value.present? and not [:brand_name, :item_type].include?(option)
             value = value.to_sym
-            @used_price_factor -= (Table.all_options[option][value] || 0)
+            @used_price_factor -= (Table.all_options(@is_patio)[option][value] || 0)
           end
         end
         @used_price_factor -= (Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0)
