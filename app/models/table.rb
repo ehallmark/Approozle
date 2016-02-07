@@ -345,7 +345,21 @@ class Table < ActiveRecord::Base
       "CABINET"=>0.0,
       "COMPUTER ARMOIRE"=>-0.2,
       "CREDENZA"=>-0.1,
-      "BOOKCASE"=>0.0
+      "BOOKCASE"=>0.0,
+      "PATIO TABLE"=>-0.00,
+      "PICNIC TABLE"=>-0.05,
+      "PATIO CHAIR"=>-0.00,
+      "PATIO BAR STOOL"=>-0.00,
+      "LAWN CHAIR"=>-0.00,
+      "PATIO OTTOMAN"=>-0.00,
+      "PATIO BENCH"=>-0.00,
+      "PICNIC BENCH"=>-0.05,
+      "PORCH SWING"=>-0.00,
+      "HAMMOCK"=>-0.05,
+      "PATIO COFFEE TABLE"=>-0.00,
+      "PATIO END TABLE"=>-0.00,
+      "DECK BOX"=>-0.05,
+      "GAZEBO"=>-0.05
     }
   end
   
@@ -376,7 +390,7 @@ class Table < ActiveRecord::Base
       "STONE": 0.05,
       "TEAK": 0.0,
       "WALNUT": 0.05,
-      "RATTAN": -0.05,
+      "RATTAN": -0.0,
       "WICKER": -0.05,
       "CONCRETE": -0.1,
       "SLATE": -0.05 
@@ -410,7 +424,10 @@ class Table < ActiveRecord::Base
       "FAUX STONE": 0.0,
       "FAUX MARBLE": 0.0,
       "CONCRETE": -0.1,
-      "GLASS": 0.0
+      "GLASS": 0.0,
+      "BAMBOO": 0.05,
+      "RATTAN": 0.0,
+      "WICKER": -0.05
     }
   end
   

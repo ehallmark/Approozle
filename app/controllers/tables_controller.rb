@@ -19,9 +19,9 @@ class TablesController < ApplicationController
       @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or ")).order(:price) if @item_type.present?
       @from_search = Table.where(@search.compact.collect{|search| "name ilike '%#{search}%'"}.join(" or ")).order(:price) if @search.present?
       # prune 5% of outliers
-      limit = @from_item_types.count/10
-      brand_limit = @from_brand_names.count/10
-      search_limit = @from_search.count/10
+      limit = (@from_item_types || []).count/10
+      brand_limit = (@from_brand_names || []).count/10
+      search_limit = (@from_search || []).count/10
       begin @from_brand_names = @from_brand_names.limit(@from_brand_names.count-brand_limit/2).offset(brand_limit/2) if @from_brand_names.count > 20 rescue nil end
       begin @from_item_types = @from_item_types.limit(@from_item_types.count-limit/2).offset(limit/2) if @from_item_types.count > 20 rescue nil end
       begin @from_search = @from_search.limit(@from_search-search_limit/2).offset(search_limit/2) if @from_search.count > 20 rescue nil end
@@ -197,8 +197,7 @@ class TablesController < ApplicationController
     product_type_seed = params[:product_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip
     ([product_type_seed]+((Table.similar_item_type_hash[product_type_seed] || [])-Table.all_item_types)).each do |product_type|
       puts "SEEDING #{product_type}"
-      # we only want single items so skip anything with 'SET' in it
-      sem3.products_field( "search", "Furniture" )
+      #sem3.products_field( "search", "Furniture" )
       sem3.products_field( "name", "include" , product_type )
       product_type = product_type.upcase.gsub(/[^0-9A-Z ]/i,'').strip
       sem3.products_field( "name", "exclude" , ([params[:exclude]]+Table.badwords+(Table.badwords_by_item_type[product_type] || [])).compact.uniq.join(" ") ) 
@@ -227,22 +226,14 @@ class TablesController < ApplicationController
         break if not @productsHash.try(:[],"results").present?
         @productsHash["results"].each do |p|
           name = p.try(:[],"name")
-          material = []
-          p.each{|k,v| 
-            material.push(v.upcase.gsub(/[^0-9A-Z ]/i,'')) if k.downcase.include?('material') and v.present?
-          }
-          puts p.inspect
           brand = p.try(:[],"brand")
           brand = p.try(:[],"seller") if not brand.present?
           brand = p.try(:[],"manufacturer") if not brand.present?
           price = p.try(:[],"price")
-          
-          puts price
-          puts brand 
-          
+  
           brand = brand.upcase.gsub(/[^0-9A-Z ]/i,'') if brand.present?
           name = name.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
-          material = material.upcase.gsub(/[^0-9A-Z ]/i,'') if name.present?
+          
           if price.present? and brand.present? and name.present?
             pHash = {
               price: price,
@@ -250,7 +241,8 @@ class TablesController < ApplicationController
               item_type: product_type_seed,
               name: name
             }
-            if (table = Table.find_or_create_by(pHash))     
+            
+            if table = Table.find_or_create_by(pHash)
               new_record_count += 1 if table.new_record?
             else
                puts table.errors.messages.inspect
@@ -407,7 +399,16 @@ class TablesController < ApplicationController
   end
   
   def analysis
-    @item_type_price_averages = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where("tables.item_type is not NULL").select("tables.item_type, tables.item_type_index, count(tables_2.id) as total_count").order("total_count desc").group("tables.id").uniq.compact
+    @item_type_price_averages = Table.all_item_types.collect{|item_type|
+      tables = Table.where(([item_type]+(Table.similar_item_type_hash[item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or "))
+      {
+        total_count: tables.count,
+        item_type: item_type,
+        item_type_index: tables.first.item_type_index
+      }
+    }
+    @item_type_price_averages.sort_by!{|a| a[:total_count] }.reverse!
+    #@item_type_price_averages = Table.joins("join tables as tables_2 on (tables.item_type = tables_2.item_type)").where("tables.item_type is not NULL").select("tables.item_type, tables.item_type_index, count(tables_2.id) as total_count").order("total_count desc").group("tables.id").uniq.compact
     @total_count = Table.all.length
   end
 
