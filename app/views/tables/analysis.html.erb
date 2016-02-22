@@ -22,7 +22,7 @@
 				<tr>
 					<th>Total</th>
 					<th><%= @total_count %></th>
-					<% averages = @item_type_price_averages.collect{|t| t[:item_type_index]}.compact %>
+					<% averages = @item_type_price_averages.collect{|t| t[:item_type_index] if t[:item_type_index]!="N/A"}.compact %>
 					<th><%= (averages.length > 0) ? averages.sum/averages.length : "N/A" %></th>
 				</tr>
 			</tbody>

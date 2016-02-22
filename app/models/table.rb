@@ -121,12 +121,16 @@ class Table < ActiveRecord::Base
       "SLEEPER CHAIR"=>["PULL OUT BED","HIDE A BED"],
       "WINGBACK CHAIR"=>["DINING CHAIR","CAPTAIN CHAIR","FORMAL CHAIR","CHAIR","LIVING ROOM CHAIR"],
       "ZERO GRAVITY CHAIR"=>["RECLINER CHAIR"],
-      "RECLINER CHAIR"=>["ROCKER","ZERO GRAVITY CHAIR"],
+      "RECLINER CHAIR"=>["ROCKER","ZERO GRAVITY CHAIR","ROCKER CHAIR"],
+      "SWIVEL ROCKER RECLINER CHAIR"=>["ROCKER CHAIR","RECLINER CHAIR","SWIVEL RECLINER CHAIR","SWIVEL CHAIR","SWIVEL ROCKER CHAIR"],
+      "SWIVEL CHAIR"=>["SWIVEL ROCKER","SWIVEL RECLINER","SWIVEL ROCKER RECLINER CHAIR"],
+      "SWIVEL ROCKER CHAIR"=>["SWIVEL CHAIR","SWIVEL ROCKER"],
+      "SWIVEL RECLINER CHAIR"=>["SWIVEL RECLINER","SWIVEL CHAIR"],
       "CHAISE LOUNGE"=>["CHAIR","SOFA CHAIR","LIVING ROOM CHAIR","OVERSIZED CHAIR"],
       "SETTEE"=>["BENCH"],
       "BENCH"=>["SETTEE","PICNIC BENCH","FORMAL BENCH"],
       "RECLINER SOFA"=>["RECLINER COUCH"],
-      "RECLINER LOVESEAT"=>["RECLINER COUCH"],
+      "RECLINER LOVESEAT"=>["RECLINER COUCH","RECLINER SOFA"],
       "SLEEPER SOFA"=>["PULL OUT BED","PULL OUT MATTRESS","HIDE A BED"],
       "SLEEPER LOVESEAT"=>["PULL OUT BED","PULL OUT MATTRESS","HIDE A BED"], 
       "SECTIONAL"=>["ALL IN ONE COUCH","ALL IN ONE SOFA"],
@@ -399,7 +403,8 @@ class Table < ActiveRecord::Base
       "RATTAN": -0.0,
       "WICKER": -0.05,
       "CONCRETE": -0.1,
-      "SLATE": -0.05 
+      "SLATE": -0.05,
+      "NONE": 0.0
     }
   end
   
@@ -539,7 +544,8 @@ class Table < ActiveRecord::Base
       "GLASS": 0.0,
       "BAMBOO": 0.05,
       "RATTAN": 0.0,
-      "WICKER": -0.05
+      "WICKER": -0.05,
+      "NONE": 0.0
     }
   end
   
@@ -554,7 +560,8 @@ class Table < ActiveRecord::Base
       "GLASS": 0.0,
       "PLASTIC": -0.05,
       "METAL": -0.05,
-      "SLATE": -0.05
+      "SLATE": -0.05,
+      "NONE": 0.0
     }
   end
   
@@ -592,7 +599,8 @@ class Table < ActiveRecord::Base
       "ABSTRACT": 0.0,
       "OVAL": 0.0,
       "HARP": -0.05,
-      "UPHOLSTERED": 0.0
+      "UPHOLSTERED": 0.0,
+      "NONE": 0.0
     }
   end
   
@@ -633,7 +641,8 @@ class Table < ActiveRecord::Base
       "ALLIGATOR": -0.05,
       "LEOPARD": -0.05,
       "TIGER": -0.05,
-      "POLKA DOT": -0.05
+      "POLKA DOT": -0.05,
+      "NONE": 0.0
     }
   end
   
@@ -652,7 +661,8 @@ class Table < ActiveRecord::Base
       "PASTEL": -0.05,
       "FADED": -0.05,
       "DARK": 0.05,
-      "BABY": -0.1
+      "BABY": -0.1,
+      "NONE": 0.0
     }
   end
   
@@ -671,7 +681,8 @@ class Table < ActiveRecord::Base
       "RUSTIC": -0.1,
       "SHABBY CHIC": -0.05,
       "TRADITIONAL": -0.05,
-      "TUSCAN": -0.05
+      "TUSCAN": -0.05,
+      "NONE": 0.0
     }
   end
   

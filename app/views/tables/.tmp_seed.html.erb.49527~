@@ -2,7 +2,7 @@
 <%= link_to "Back to Furniture Page", tables_path %>
 <%= form_tag tables_get_products_path do %>
 	<%= label_tag :product_type %><br />
-	<%= select_tag :product_type, options_for_select(Table.all_item_types-Table.select("item_type").uniq.collect{|i| i.item_type}), include_blank: true %><br />
+	<%= select_tag :product_type, options_for_select(Table.all_item_types-Table.select("tables.item_type").uniq.collect{|i| i.item_type}), include_blank: true %><br />
 	<%= label_tag :brand_name %><br />
 	<%= select_tag :brand_name, options_for_select(Table.all_brand_names), include_blank: true %><br />
 	<%= label_tag :offset %><br />

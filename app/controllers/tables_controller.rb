@@ -406,7 +406,7 @@ class TablesController < ApplicationController
       {
         total_count: tables.count,
         item_type: item_type,
-        item_type_index: tables.first.item_type_index
+        item_type_index: begin tables.first.item_type_index rescue "N/A" end
       }
     }
     @item_type_price_averages.sort_by!{|a| a[:total_count] }.reverse!
