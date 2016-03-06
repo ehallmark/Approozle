@@ -7,6 +7,15 @@ class TablesController < ApplicationController
   
   def appraisal_index
   end
+
+  def get_appraisal
+    
+  end
+  
+  def forms
+    render params[:item_type].gsub(" ","").downcase+"_form"
+    return
+  end
   
   def appraisal_results
     table = params[:table]
@@ -14,7 +23,7 @@ class TablesController < ApplicationController
     if table.present?
       table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
       table.has_key?(:item_type) ? @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @item_type = ""
-      table.has_key?(:item_type) ? @search = table.delete_if{|k,v| [:brand_name,:item_type].include?(k.to_sym) or v=="NO" or v=="NONE" or v.blank? }.collect{|k,v| v=="YES" ? k.upcase.gsub("_"," ").gsub(/[^0-9A-Z ]/i,'').strip.split(" OR ") : v.gsub(/[^0-9A-Z ]/i,'').strip}.flatten.uniq : @search = []
+      (table.keys()-[:item_type,:brand_name]).length > 0 ? @search = table.delete_if{|k,v| [:brand_name,:item_type].include?(k.to_sym) or v.blank? or v.upcase=="NO" or v.upcase=="NONE" or v.upcase=="UNSURE" }.collect{|k,v| v.upcase=="YES" ? k.upcase.gsub("_"," ").gsub(/[^0-9A-Z ]/i,'').strip.split(" OR ") : v.upcase.gsub(/[^0-9A-Z ]/i,'').strip}.flatten.uniq : @search = []
       @from_brand_names = Table.where(([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%' or name ilike '%#{brand_name}%'"}.join(" or ")).order(:price) if @brand_name.present?
       @from_item_types = Table.where(([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or ")).order(:price) if @item_type.present?
       @from_search = Table.where(@search.compact.collect{|search| "name ilike '%#{search}%'"}.join(" or ")).order(:price) if @search.present?
@@ -158,12 +167,15 @@ class TablesController < ApplicationController
         (params[:table] || {}).each do |option,value|
           option = option.to_sym
           if Table.all_options(@is_patio).keys().include?(option) and value.present? and not [:brand_name, :item_type].include?(option)
-            value = value.to_sym
-            @used_price_factor -= (Table.all_options(@is_patio)[option][value] || 0)
+            begin
+              value = value.strip.upcase.to_sym
+              @used_price_factor -= (Table.all_options(@is_patio)[option][value] || 0)
+            rescue nil
+            end
           end
         end
-        @used_price_factor -= (Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0)
-        @used_price_factor -= (Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0)
+        begin @used_price_factor -= (Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0)rescue nil end
+        begin @used_price_factor -= (Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0) rescue nil end
         @used_price_factor = [@used_price_factor,0.8].min
         @used_price_factor = [@used_price_factor,0.3].max
       rescue
@@ -380,6 +392,12 @@ class TablesController < ApplicationController
   def show
     @table = Table.find(params[:id])
   end
+  
+  def formExample
+    
+  end
+  
+  
 
   def index
     #Table.where(price: nil).destroy_all

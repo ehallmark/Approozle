@@ -22,7 +22,7 @@
 		Search - Item Type Index: <%= @search_boost_from_item_type %><br />
 		Search - Brand Name Index: <%= @search_boost_from_brand_name %><br />
 		Search - Count: <%= @search_count %><br />
-		Search Parameters: <%= (@search || []).join("; ") %><br />
+		Search Parameters: <%= @search.join("; ") %><br />
 		<br />	
 	</div>
 	<div class = "col-xs-7">

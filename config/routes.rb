@@ -15,9 +15,13 @@ Rails.application.routes.draw do
   
   get 'tables/seed' => 'tables#seed'
   
+  get 'forms/:item_type' => 'tables#forms', as: :forms
+  
   delete 'tables/delete' => 'tables#delete'
   
   post 'tables/update' => 'tables#update'
+  
+  post 'tables/getAppraisal' => 'tables#get_appraisal'
   
   post 'tables/get_products' => 'tables#get_products'
   
