@@ -1,5 +1,6 @@
 class TablesController < ApplicationController
   require 'semantics3'
+  require 'rinruby'
 
   # Your Semantics3 API Credentials
   API_KEY = 'SEM3259890376C6C204B176FF18706FB87EB'
@@ -8,16 +9,122 @@ class TablesController < ApplicationController
   def appraisal_index
   end
 
-  def get_appraisal
+  def appraisal_results
+    table = params[:table] || {}
     
+    
+    # Get parameters and construct query
+    @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip
+    raise unless @item_type.present?
+    table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
+    (table.keys()-[:item_type,:brand_name]).length > 0 ? @options = table.delete_if{|k,v| [:brand_name,:item_type].include?(k.to_sym) or v.blank? or v.upcase=="NO" or v.upcase=="NONE" or v.upcase=="UNSURE" }.collect{|k,v| v.upcase=="YES" ? k.upcase.gsub("_"," ").gsub(/[^0-9A-Z ]/i,'').strip.split(" OR ") : v.upcase.gsub(/[^0-9A-Z ]/i,'').strip}.flatten.compact.uniq : @options = []
+
+    # determine what params to use
+    begin @brand_name_index = Table.where(:brand_name=>@brand_name).limit(1).first.brand_name_index rescue @brand_name_index = nil end
+    begin @item_type_index = Table.where(:item_type=>@item_type).limit(1).first.item_type_index rescue @brand_name_index = nil end
+  
+    primary_select_clause = "tables.price, tables.item_type_index, tables.brand_name_index"
+    options_dummy_variables = @options.collect{|option| "(case when name like '%#{option}%' then 1 else 0 end) as d#{@options.index(option)}" }.join(", ")
+    
+    select_clause = [primary_select_clause,options_dummy_variables].join(", ")
+    
+    # Run the queries
+    
+    item_where_clause = ([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).collect{|i| "item_type = '#{i}'"}.join(" or ")
+    if @brand_name_index.present?
+      brand_where_clause = ([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).collect{|b| "brand_name = '#{b}'"}.join(" or ")
+    end
+    
+    search = Table.where([item_where_clause,brand_where_clause].compact.join(" or ")).limit(1000).select(select_clause)
+    
+    # Extract data
+    prices = []
+    item_type_indices = []
+    brand_name_indices = []
+    dummy_variables = 1.upto(@options.length).collect{ [] }
+    search.each do |s|
+      prices.push(s.price)
+      item_type_indices.push(s.item_type_index) 
+      brand_name_indices.push(s.brand_name_index) unless @brand_name_index.blank?
+      0.upto(@options.length-1).each do |i|
+        dummy_variables[i].push(s.send("d#{i}")) 
+      end
+    end
+    
+    dummy_variables = dummy_variables.keep_if{|d|
+      d.sum != 0
+    }
+    
+    R.price = prices
+    R.brand_name_index = brand_name_indices unless @brand_name_index.blank?
+    R.item_type_index = item_type_indices
+    0.upto(dummy_variables.length-1).each do |i|
+      R.eval("d#{i} <- c(#{dummy_variables[i].join(",")})")
+    end
+    # Run regression
+    
+    item_string = "item_type_index"
+    @brand_name_index.blank? ? brand_string = "" : brand_string = "brand_name_index"
+    dummy_variables_string = 0.upto(dummy_variables.length-1).collect{|i| "d#{i}"}.join(" + ")
+    regression_string = [item_string,brand_string,dummy_variables_string].keep_if{|d| d.present? }.join(" + ")
+    
+    dummy_variable_data = 0.upto(dummy_variables.length-1).collect{|i| "d#{i}=1"}.join(", ") 
+    @item_type_index.blank? ? item_type_data = nil : item_type_data = "#{item_string}=#{@item_type_index}"
+    @brand_name_index.blank? ? brand_name_data = nil : brand_name_data = "#{brand_string}=#{@brand_name_index}"
+
+    data_frame = [item_type_data, brand_name_data, dummy_variable_data].keep_if{|d| d.present? }.join(", ")
+    
+    #Get predicted price
+    R.eval(
+       [
+          "fit <- lm(price ~ #{regression_string}, na.action=na.omit)",
+          "predictions <- predict(fit, newdata=data.frame(#{data_frame}) ,na.action=na.omit)",
+          #"f <- fit$fstatistic",
+          #"confidence = pf(q = f[1], df1 = f[2], df2 = f[3], lower.tail = TRUE)"
+          "confidence = summary(fit)$adj.r.squared"
+       ].join("; ")
+    )
+    puts R.confidence
+    @confidence = R.confidence*100
+    
+    begin @final_retail_price = R.predictions rescue @final_retail_price = "N/A" end
+
+    @is_patio = false
+    begin @item_type.present? ? @is_patio = Table.patio_item_types.include?(@item_type) : @is_patio = false rescue @is_patio = false end
+    begin
+      @used_price_factor = 0.4 
+      (params[:table] || {}).each do |option,value|
+        option = option.to_sym
+        if Table.all_options(@is_patio).keys().include?(option) and value.present? and not [:brand_name, :item_type].include?(option)
+          begin
+            value = value.strip.upcase.to_sym
+            @used_price_factor -= (Table.all_options(@is_patio)[option][value] || 0)
+          rescue nil
+          end
+        end
+      end
+      begin @used_price_factor -= (Table.used_item_type_hash[(Table.standardized_item_types[@item_type] || @item_type)] || 0)rescue nil end
+      begin @used_price_factor -= (Table.used_brand_name_hash[(Table.standardized_brand_names[@brand_name] || @brand_name)] || 0) rescue nil end
+      @used_price_factor = [@used_price_factor,0.8].min
+      @used_price_factor = [@used_price_factor,0.3].max
+    rescue
+      @used_price_factor = 0.4
+    end
+    begin @final_used_price = @final_retail_price.to_f * (1.0-@used_price_factor).to_f rescue @final_used_price = "N/A" end
+
   end
   
   def forms
-    render params[:item_type].gsub(" ","").downcase+"_form"
+    @item_type = params[:item_type]
+    begin
+      render params[:item_type].gsub(" ","").downcase+"_form"
+    rescue
+      render "form"
+    end
     return
   end
   
-  def appraisal_results
+  def appraisal_results_OLD
     table = params[:table]
     @error = false
     if table.present?

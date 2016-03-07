@@ -9,7 +9,17 @@
 #end
 
 class Table < ActiveRecord::Base
+require 'rinruby'
+include PgSearch
 
+  pg_search_scope :brand_search, :against => {
+                                    :brand_name => 'B',
+                                    :name => 'A'
+                                  },
+                                :using => {
+                                    :tsearch => {:any_word => true}
+                                  }
+  
   #belongs_to :brand
   #accepts_nested_attributes_for :brand
   before_validation :capitalize_attributes

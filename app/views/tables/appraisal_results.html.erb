@@ -1,48 +1,11 @@
 <h2>Approozle Results</h2>
 <div class = "row">
 	<div class = "col-xs-5">
-		Item Type: <%= @item_type %><br />
-		Brand Name: <%= @brand_name %><br />
-		<br />
-		Item Type - Mean <%= @item_type_price_mean %><br />
-		Item Type - Median <%= @item_type_price_median %><br />
-		Item Type - Price Average: <%= number_to_currency @item_type_price_average %><br />
-		Item Type - Brand Name Index: <%= @item_type_boost_from_brand_name %><br />
-		Item Type - Count: <%= @item_type_count %><br />
-		<br />
-		Brand Name - Mean <%= @brand_name_price_mean %><br />
-		Brand Name - Median <%= @brand_name_price_median %><br />
-		Brand Name - Price Average: <%= number_to_currency @brand_name_price_average %><br />
-		Brand Name - Item Type Index: <%= @brand_name_boost_from_item_type %><br />
-		Brand Name - Count: <%= @brand_name_count %><br />
-		<br />	
-		Search - Mean <%= @search_price_mean %><br />
-		Search - Median <%= @search_price_median %><br />
-		Search - Price Average: <%= number_to_currency @search_price_average %><br />
-		Search - Item Type Index: <%= @search_boost_from_item_type %><br />
-		Search - Brand Name Index: <%= @search_boost_from_brand_name %><br />
-		Search - Count: <%= @search_count %><br />
-		Search Parameters: <%= (@search || []).join("; ") %><br />
-		<br />	
-	</div>
-	<div class = "col-xs-7">
-		<h4>
-			Price Estimated From Item Type Index: <%= number_to_currency @adjusted_and_weighted_item_type_average %>
-		<h4/>
-		<h4>
-			Price Estimated From Brand Name Index: <%= number_to_currency @adjusted_and_weighted_brand_name_average %><br />
-		</h4>
-		<h4>
-			Price Estimated From Search: <%= number_to_currency @adjusted_and_weighted_search_average %><br />
-		</h4>
-		<h4>
-			Retail Price Estimate: <%= number_to_currency @final_retail_price %>
-		</h4>
-		<h4>
-			Used Price Factor: <%= (@used_price_factor == "N/A") ? @used_price_factor : number_to_percentage((@used_price_factor||0)*100) %>
-		</h4>
+
 		<h3>
-			Final Used Price Estimate: <%= number_to_currency @final_used_price %>
+			Retail Price Estimate: <%= number_to_currency @final_retail_price %> <br />
+			Used Price Estimate: <%= number_to_currency @final_used_price %> <br />
+			Confidence: <%= number_to_percentage @confidence %>
 		</h3>
 		
 	</div>

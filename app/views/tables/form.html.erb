@@ -1,6 +1,6 @@
 <html class="supernova"><head>
 
-<title>Shelf Unit</title>
+<title><%= @item_type.titleize %></title>
 
 <script type="text/javascript">
    JotForm.init(function(){
@@ -11,7 +11,7 @@
 </head>
 <body>
 <form name="form_60636283503150" class="jotform-form" id="60636283503150" action="<%= tables_appraisal_path %>" method="post" accept-charset="utf-8" novalidate="true">
-  <input name="item_type" type="hidden" value="Shelf Unit">
+  <input name="table[item_type]" type="hidden" value="<%= @item_type %>">
   <%= hidden_field_tag(request_forgery_protection_token.to_s, form_authenticity_token) %>
   <div class="form-all">
     <ul class="form-section page-section">
@@ -77,6 +77,27 @@
             <option value="Veneer on solid wood"> Veneer on solid wood </option>
             <option value="Veneer on plywood"> Veneer on plywood </option>
             <option value="Veneer on particle board"> Veneer on particle board </option>
+          </select>
+        </div>
+      </li>
+      <li class="form-line" id="id_51" data-type="control_dropdown">
+        <label class="form-label form-label-left form-label-auto" id="label_51" for="input_51"> Material of base or legs </label>
+        <div class="form-input jf-required" id="cid_51">
+		<select name="material_of_base" class="form-dropdown" id="input_51" style="width:150px">
+            <option value="">  </option>
+            <option value="Solid Wood"> Solid Wood </option>
+            <option value="Plywood"> Plywood </option>
+            <option value="Scrolled Iron"> Scrolled Iron </option>
+            <option value="Chrome"> Chrome </option>
+            <option value="Plastic"> Plastic </option>
+            <option value="Stone"> Stone </option>
+            <option value="Wicker"> Wicker </option>
+			<option value="Faux Stone"> Faux Stone </option>
+            <option value="Faux Marble"> Faux Marble </option>
+            <option value="Concrete"> Concrete </option>
+            <option value="Glass"> Glass </option>
+			<option value="Bamboo"> Bamboo </option>
+            <option value="Rattan"> Rattan </option>
           </select>
         </div>
       </li>
