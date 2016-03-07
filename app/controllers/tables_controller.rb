@@ -16,26 +16,29 @@ class TablesController < ApplicationController
     # Get parameters and construct query
     @item_type = table[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip
     raise unless @item_type.present?
-    table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = ""
+    table.has_key?(:brand_name) ? @brand_name = table[:brand_name].upcase.gsub(/[^0-9A-Z ]/i,'').strip : @brand_name = nil
     (table.keys()-[:item_type,:brand_name]).length > 0 ? @options = table.delete_if{|k,v| [:brand_name,:item_type].include?(k.to_sym) or v.blank? or v.upcase=="NO" or v.upcase=="NONE" or v.upcase=="UNSURE" }.collect{|k,v| v.upcase=="YES" ? k.upcase.gsub("_"," ").gsub(/[^0-9A-Z ]/i,'').strip.split(" OR ") : v.upcase.gsub(/[^0-9A-Z ]/i,'').strip}.flatten.compact.uniq : @options = []
 
     # determine what params to use
-    begin @brand_name_index = Table.where(:brand_name=>@brand_name).limit(1).first.brand_name_index rescue @brand_name_index = nil end
-    begin @item_type_index = Table.where(:item_type=>@item_type).limit(1).first.item_type_index rescue @brand_name_index = nil end
+    begin 
+      raise unless @brand_name.present?
+      @brand_name_index = Table.where(:brand_name=>@brand_name).limit(1).first.brand_name_index 
+    rescue 
+      @brand_name_index = nil 
+    end
+    
+    begin @item_type_index = Table.where(:item_type=>@item_type).limit(1).first.item_type_index rescue @item_type_index = nil end
   
     primary_select_clause = "tables.price, tables.item_type_index, tables.brand_name_index"
     options_dummy_variables = @options.collect{|option| "(case when name like '%#{option}%' then 1 else 0 end) as d#{@options.index(option)}" }.join(", ")
     
-    select_clause = [primary_select_clause,options_dummy_variables].join(", ")
+    select_clause = [primary_select_clause,options_dummy_variables].keep_if{|s| s.present? }.join(", ")
     
+    #query = (([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}+([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).compact.collect{|brand_name| "brand_name ilike '%#{brand_name}%'"}).join(" or ")
+    query = ([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).compact.collect{|item_type| "item_type = '#{item_type}'"}.join(" or ")
+
     # Run the queries
-    
-    item_where_clause = ([@item_type]+(Table.similar_item_type_hash[@item_type] || [])).collect{|i| "item_type = '#{i}'"}.join(" or ")
-    if @brand_name_index.present?
-      brand_where_clause = ([@brand_name]+(Table.similar_brand_name_hash[@brand_name] || [])).collect{|b| "brand_name = '#{b}'"}.join(" or ")
-    end
-    
-    search = Table.where([item_where_clause,brand_where_clause].compact.join(" or ")).limit(1000).select(select_clause)
+    search = Table.where(query).order("random()").limit(1500).select(select_clause) 
     
     # Extract data
     prices = []
@@ -45,7 +48,7 @@ class TablesController < ApplicationController
     search.each do |s|
       prices.push(s.price)
       item_type_indices.push(s.item_type_index) 
-      brand_name_indices.push(s.brand_name_index) unless @brand_name_index.blank?
+      brand_name_indices.push(s.brand_name_index)
       0.upto(@options.length-1).each do |i|
         dummy_variables[i].push(s.send("d#{i}")) 
       end
@@ -56,38 +59,38 @@ class TablesController < ApplicationController
     }
     
     R.price = prices
-    R.brand_name_index = brand_name_indices unless @brand_name_index.blank?
-    R.item_type_index = item_type_indices
+    R.brand_name_index = brand_name_indices
+
     0.upto(dummy_variables.length-1).each do |i|
       R.eval("d#{i} <- c(#{dummy_variables[i].join(",")})")
     end
     # Run regression
     
-    item_string = "item_type_index"
-    @brand_name_index.blank? ? brand_string = "" : brand_string = "brand_name_index"
+    brand_string = "brand_name_index"
     dummy_variables_string = 0.upto(dummy_variables.length-1).collect{|i| "d#{i}"}.join(" + ")
-    regression_string = [item_string,brand_string,dummy_variables_string].keep_if{|d| d.present? }.join(" + ")
+    regression_string = [brand_string,dummy_variables_string].keep_if{|d| d.present? }.join(" + ")
     
     dummy_variable_data = 0.upto(dummy_variables.length-1).collect{|i| "d#{i}=1"}.join(", ") 
-    @item_type_index.blank? ? item_type_data = nil : item_type_data = "#{item_string}=#{@item_type_index}"
-    @brand_name_index.blank? ? brand_name_data = nil : brand_name_data = "#{brand_string}=#{@brand_name_index}"
+    brand_name_data = "#{brand_string}=brand_average"
+    
+    @brand_name_index.blank? ? R.eval("brand_average <- avg(brand_name_index)") : R.brand_average = @brand_name_index
+    
 
-    data_frame = [item_type_data, brand_name_data, dummy_variable_data].keep_if{|d| d.present? }.join(", ")
+    data_frame = [brand_name_data, dummy_variable_data].keep_if{|d| d.present? }.join(", ")
     
     #Get predicted price
     R.eval(
        [
-          "fit <- lm(price ~ #{regression_string}, na.action=na.omit)",
+          "fit <- lm(price ~ 0 + #{regression_string}, na.action=na.omit)",
           "predictions <- predict(fit, newdata=data.frame(#{data_frame}) ,na.action=na.omit)",
           #"f <- fit$fstatistic",
           #"confidence = pf(q = f[1], df1 = f[2], df2 = f[3], lower.tail = TRUE)"
           "confidence = summary(fit)$adj.r.squared"
        ].join("; ")
     )
-    puts R.confidence
     @confidence = R.confidence*100
-    
-    begin @final_retail_price = R.predictions rescue @final_retail_price = "N/A" end
+    @final_retail_price = R.predictions
+
 
     @is_patio = false
     begin @item_type.present? ? @is_patio = Table.patio_item_types.include?(@item_type) : @is_patio = false rescue @is_patio = false end
@@ -115,12 +118,8 @@ class TablesController < ApplicationController
   end
   
   def forms
-    @item_type = params[:item_type]
-    begin
-      render params[:item_type].gsub(" ","").downcase+"_form"
-    rescue
-      render "form"
-    end
+    @item_type = params[:item_type].upcase.gsub(/[^0-9A-Z ]/i,'').strip
+    begin render ["form",Table.form_type[@item_type]].join rescue render "formA" end
     return
   end
   

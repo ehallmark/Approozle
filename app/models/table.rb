@@ -12,13 +12,10 @@ class Table < ActiveRecord::Base
 require 'rinruby'
 include PgSearch
 
-  pg_search_scope :brand_search, :against => {
-                                    :brand_name => 'B',
-                                    :name => 'A'
-                                  },
-                                :using => {
-                                    :tsearch => {:any_word => true}
-                                  }
+  pg_search_scope :with_search, :against => :name #,
+     #                           :using => {
+     #                               :tsearch => {:any_word => true}
+      #                            }
   
   #belongs_to :brand
   #accepts_nested_attributes_for :brand
@@ -58,6 +55,95 @@ include PgSearch
     new_hash = {}
     Table.similar_item_type_hash.each {|k,val| val.each{|v| new_hash[v]=k unless Table.all_item_types.include? v } }
     return new_hash
+  end
+  
+  def self.form_type
+    {
+      "DINING TABLE"=>"D",
+      "DINING CHAIR"=>"C",
+      "PUB TABLE"=>"D",
+      "BISTRO TABLE"=>"D",
+      "BAR STOOL"=>"B",
+      "CHINA HUTCH"=>"",
+      "CHINA CLOSET"=>"",
+      "BUFFET"=>"D",
+      "SIDEBOARD"=>"D",
+      "SERVER"=>"A",
+      "BAR"=>"D",
+      "BAR TABLE"=>"",
+      "DISPLAY CASE"=>"",
+      "CURIO"=>"",
+      "ETAGERE"=>"",
+      "CONSOLE"=>"D",
+      "PLATFORM BED"=>"C",
+      "CAPTAIN BED"=>"C",
+      "PIER BED"=>"C",
+      "4 POSTER BED"=>"C",
+      "CANOPY BED"=>"C",
+      "TRUNDLE BED"=>"C",
+      "DAY BED"=>"C",
+      "FUTON"=>"A",
+      "DRESSER"=>"A",
+      "CHEST"=>"A",
+      "CHEST ON CHEST"=>"A",
+      "GENTLEMAN CHEST"=>"A",
+      "LINGERIE CHEST"=>"A",
+      "HIGH BOY"=>"A",
+      "NIGHTSTAND"=>"A",
+      "ARMOIRE"=>"A",
+      "VANITY TABLE"=>"A",
+      "SOFA"=>"",
+      "LOVESEAT"=>"",
+      "CLUB CHAIR"=>"B",
+      "CHAIR"=>"B",
+      "DESK CHAIR"=>"B",
+      "HALF CHAIR"=>"B",
+      "GLIDER CHAIR"=>"B",
+      "MASSAGE CHAIR"=>"B",
+      "MASSAGE RECLINER CHAIR"=>"B",
+      "OCCASIONAL CHAIR"=>"B",
+      "RECLINER CHAIR"=>"B",
+      "ROCKER CHAIR"=>"B",
+      "ROCKER RECLINER CHAIR"=>"B",
+      "SLEEPER CHAIR"=>"B",
+      "SWIVEL CHAIR"=>"B",
+      "SWIVEL RECLINER CHAIR"=>"B",
+      "SWIVEL ROCKER CHAIR"=>"B",
+      "SWIVEL ROCKER RECLINER CHAIR"=>"B",
+      "WINGBACK CHAIR"=>"B",
+      "ZERO GRAVITY CHAIR"=>"B",
+      "CHAISE LOUNGE"=>"B",
+      "SETTEE"=>"",
+      "BENCH"=>"",
+      "RECLINER SOFA"=>"",
+      "RECLINER LOVESEAT"=>"",
+      "SLEEPER SOFA"=>"",
+      "SLEEPER LOVESEAT"=>"",
+      "SECTIONAL"=>"",
+      "SECTIONAL WITH SLEEPER"=>"",
+      "SECTIONAL WITH RECLINER"=>"",
+      "OTTOMAN"=>"",
+      "COFFEE TABLE"=>"D",
+      "END TABLE"=>"D",
+      "SOFA TABLE"=>"D",
+      "OCCASIONAL TABLE"=>"D",
+      "TV STAND"=>"",
+      "TV CONSOLE"=>"",
+      "ENTERTAINMENT CENTER"=>"",
+      "WALL UNIT"=>"",
+      "SHELF UNIT"=>"",
+      "DESK"=>"A",
+      "STUDENT DESK"=>"A",
+      "COMPUTER DESK"=>"A",
+      "WRITING DESK"=>"A",
+      "EXECUTIVE DESK"=>"A",
+      "SECRETARY"=>"",
+      "OFFICE CHAIR"=>"B",
+      "CABINET"=>"A",
+      "COMPUTER ARMOIRE"=>"A",
+      "CREDENZA"=>"A",
+      "BOOKCASE"=>""
+    }
   end
   
   def self.standardized_brand_names
